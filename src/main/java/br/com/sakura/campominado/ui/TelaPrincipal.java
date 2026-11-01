@@ -3,9 +3,14 @@ package br.com.sakura.campominado.ui;
 import javax.swing.*;
 import java.awt.*;
 
+import br.com.sakura.campominado.domain.Tabuleiro;
+import br.com.sakura.campominado.util.AudioManager;
+import br.com.sakura.campominado.ui.PainelTabuleiro;
+
 public class TelaPrincipal extends JFrame {
 
     public TelaPrincipal() {
+        AudioManager.tocarSom("bleep.wav");
         // 1. Configurar o título da janela
         setTitle("Campo Minado - Sakura");
         setSize(400, 400);
@@ -17,10 +22,10 @@ public class TelaPrincipal extends JFrame {
         painelPrincipal.setBackground(new Color(255, 253, 240)); // Tom creme suave
         painelPrincipal.setLayout(new BorderLayout());
 
-        // 3. Criar o painel secundário rosa claro (onde depois ficará o tabuleiro)
-        JPanel painelTabuleiroOuCentro = new JPanel();
-        painelTabuleiroOuCentro.setBackground(new Color(255, 228, 225)); // Tom rosa claro
-        painelPrincipal.add(painelTabuleiroOuCentro, BorderLayout.CENTER);
+        // 3. Criar o tabuleiro do jogo e o painel correspondente
+        Tabuleiro tabuleiro = new Tabuleiro(8, 8, 10);
+        PainelTabuleiro painelTabuleiro = new PainelTabuleiro(tabuleiro);
+        painelPrincipal.add(painelTabuleiro, BorderLayout.CENTER);
 
         // 4. Criar o botão para reiniciar
         JButton botaoReiniciar = new JButton("Reiniciar");
