@@ -1,1 +1,6 @@
+br\com\sakura\campominado\domain\Celula.class
+br\com\sakura\campominado\domain\Tabuleiro.class
+br\com\sakura\campominado\ui\TelaPrincipal.class
+br\com\sakura\campominado\Main.class
+br\com\sakura\campominado\domain\Posicao.class
 br\com\sakura\App.class
