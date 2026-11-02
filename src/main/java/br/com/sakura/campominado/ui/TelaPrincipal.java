@@ -46,7 +46,8 @@ public class TelaPrincipal extends JFrame {
     private final Timer cronometro;
     private Timer timerAutojogo;
 
-    private Dificuldade dificuldadeAtual = Dificuldade.FACIL;
+    private Dificuldade dificuldadeAtual =
+            Dificuldade.FACIL;
 
     private int segundos;
     private int dicasRestantes = 3;
@@ -54,7 +55,6 @@ public class TelaPrincipal extends JFrame {
     private boolean partidaIniciada;
     private boolean resultadoProcessado;
     private boolean pausado;
-
     private boolean autosolveAtivo;
 
     private String nomeJogador = "Jogador";
@@ -128,7 +128,11 @@ public class TelaPrincipal extends JFrame {
 
         cronometro = new Timer(1000, evento -> {
 
-            if (!pausado && !resultadoProcessado) {
+            if (!pausado
+                    && !resultadoProcessado
+                    && tabuleiro != null
+                    && !tabuleiro.isJogoEncerrado()) {
+
                 segundos++;
                 atualizarInformacoes();
             }
@@ -177,7 +181,9 @@ public class TelaPrincipal extends JFrame {
                 new Font("SansSerif", Font.BOLD, 20)
         );
 
-        titulo.setForeground(TemaSakura.ROSA_ESCURO);
+        titulo.setForeground(
+                TemaSakura.ROSA_ESCURO
+        );
 
         JPanel linhaSuperior = new JPanel(
                 new BorderLayout(8, 0)
@@ -382,13 +388,10 @@ public class TelaPrincipal extends JFrame {
         atualizarInformacoes();
         ajustarTamanhoJanela();
 
-        SwingUtilities.invokeLater(() -> {
-
-            rolagemTabuleiro.getViewport()
-                    .setViewPosition(
-                            new Point(0, 0)
-                    );
-        });
+        SwingUtilities.invokeLater(() ->
+                rolagemTabuleiro.getViewport()
+                        .setViewPosition(new Point(0, 0))
+        );
     }
 
     private void ajustarTamanhoJanela() {
@@ -462,10 +465,7 @@ public class TelaPrincipal extends JFrame {
 
         int alturaDesejada = Math.max(
                 tamanhoGrade.height,
-                Math.min(
-                        larguraDesejada,
-                        alturaUtil
-                )
+                Math.min(larguraDesejada, alturaUtil)
         );
 
         int larguraViewport = Math.min(
@@ -487,19 +487,9 @@ public class TelaPrincipal extends JFrame {
 
         pack();
 
-        int larguraFinal = Math.min(
-                getWidth(),
-                larguraMaxima
-        );
-
-        int alturaFinal = Math.min(
-                getHeight(),
-                alturaMaxima
-        );
-
         setSize(
-                larguraFinal,
-                alturaFinal
+                Math.min(getWidth(), larguraMaxima),
+                Math.min(getHeight(), alturaMaxima)
         );
 
         setLocationRelativeTo(null);
@@ -516,9 +506,7 @@ public class TelaPrincipal extends JFrame {
             return;
         }
 
-        if (!partidaIniciada) {
-            partidaIniciada = true;
-        }
+        partidaIniciada = true;
 
         if (!cronometro.isRunning()) {
             cronometro.start();
@@ -634,22 +622,20 @@ public class TelaPrincipal extends JFrame {
                 case AUTOSOLVE -> {
 
                     menuAberto = false;
-                    pausado = false;
 
                     if (autosolveEstavaAtivo) {
-
                         pararAutojogo();
                         retomarPartida();
-
                     } else {
-
                         iniciarAutojogo();
                     }
                 }
 
-                case ALTERAR_JOGADOR -> alterarJogador();
+                case ALTERAR_JOGADOR ->
+                        alterarJogador();
 
-                case RANKING -> mostrarRanking();
+                case RANKING ->
+                        mostrarRanking();
 
                 case REINICIAR -> {
 
@@ -664,7 +650,6 @@ public class TelaPrincipal extends JFrame {
                             );
 
                     if (confirmar == JOptionPane.YES_OPTION) {
-
                         menuAberto = false;
                         iniciarNovaPartida();
                     }
@@ -683,7 +668,6 @@ public class TelaPrincipal extends JFrame {
                             );
 
                     if (confirmar == JOptionPane.YES_OPTION) {
-
                         menuAberto = false;
                         voltarAoMenuInicial();
                     }
@@ -699,7 +683,6 @@ public class TelaPrincipal extends JFrame {
         if (partidaIniciada
                 && !resultadoProcessado
                 && !tabuleiro.isJogoEncerrado()) {
-
             cronometro.start();
         }
     }
@@ -764,7 +747,6 @@ public class TelaPrincipal extends JFrame {
     private void pararAutojogo() {
 
         if (timerAutojogo != null) {
-
             timerAutojogo.stop();
             timerAutojogo = null;
         }
@@ -816,12 +798,21 @@ public class TelaPrincipal extends JFrame {
                 dicasRestantes > 0
                         && !resultadoProcessado
                         && !tabuleiro.isJogoEncerrado()
+                        && !pausado
+                        && !autojogoEmAndamento()
         );
 
         botaoPausar.setEnabled(
                 !resultadoProcessado
                         && !tabuleiro.isJogoEncerrado()
         );
+
+        // Detecta o fim mesmo quando o tabuleiro
+        // apenas notifica uma atualização visual.
+        if (tabuleiro.isJogoEncerrado()
+                && !resultadoProcessado) {
+            encerrarPartida();
+        }
     }
 
     private int calcularPontuacao() {
@@ -841,14 +832,11 @@ public class TelaPrincipal extends JFrame {
                  coluna++) {
 
                 if (tabuleiro.getCelula(
-                        linha,
-                        coluna
+                        linha, coluna
                 ).isRevelada()
                         && !tabuleiro.getCelula(
-                                linha,
-                                coluna
+                                linha, coluna
                         ).isMinada()) {
-
                     reveladas++;
                 }
             }
@@ -876,148 +864,99 @@ public class TelaPrincipal extends JFrame {
 
     private void encerrarPartida() {
 
-        if (resultadoProcessado) {
+        if (resultadoProcessado
+                || tabuleiro == null
+                || !tabuleiro.isJogoEncerrado()) {
             return;
         }
 
+        // Impede abertura duplicada da janela.
         resultadoProcessado = true;
 
         pararAutojogo();
         cronometro.stop();
 
-        atualizarInformacoes();
+        final boolean venceu = tabuleiro.isVenceu();
+        final int pontos = calcularPontuacao();
+        final int tempoFinal = segundos;
+        final String jogadorFinal = nomeJogador;
+        final Dificuldade dificuldadeFinal =
+                dificuldadeAtual;
 
-        boolean venceu = tabuleiro.isVenceu();
-
-        String mensagem;
+        boolean salvouRanking = false;
 
         if (venceu) {
-
-            int pontos = calcularPontuacao();
-
             try {
 
                 rankingService.salvar(
                         new RegistroPartida(
-                                nomeJogador,
-                                tabuleiro.getConfiguracao()
-                                        .getDificuldade()
-                                        .getNome(),
+                                jogadorFinal,
+                                dificuldadeFinal.getNome(),
                                 pontos,
-                                segundos,
+                                tempoFinal,
                                 LocalDateTime.now()
                         )
                 );
 
-                mensagem =
-                        "✿ Vitória! ✿\n\n"
-                                + "Jogador: " + nomeJogador
-                                + "\nPontuação: " + pontos
-                                + "\nTempo: " + segundos + "s"
-                                + "\nRanking atualizado.";
+                salvouRanking = true;
 
             } catch (IllegalStateException e) {
 
-                mensagem =
-                        "✿ Vitória! ✿\n\n"
-                                + "Pontuação: " + pontos
-                                + "\nTempo: " + segundos + "s"
-                                + "\n\nNão foi possível salvar o ranking:\n"
-                                + e.getMessage();
-            }
-
-        } else {
-
-            mensagem =
-                    "Fim de jogo!\n\n"
-                            + "Pontuação: " + calcularPontuacao()
-                            + "\nTempo: " + segundos + "s";
-        }
-
-        mostrarOpcoesFimPartida(
-                mensagem,
-                venceu
-        );
-    }
-
-    private void mostrarOpcoesFimPartida(
-            String mensagem,
-            boolean venceu
-    ) {
-
-        Object[] opcoes = {
-                "Jogar novamente",
-                "Mudar dificuldade",
-                "Voltar ao menu"
-        };
-
-        int escolha = JOptionPane.showOptionDialog(
-                this,
-                mensagem,
-                venceu ? "Vitória Sakura" : "Fim de jogo",
-                JOptionPane.DEFAULT_OPTION,
-                venceu
-                        ? JOptionPane.INFORMATION_MESSAGE
-                        : JOptionPane.WARNING_MESSAGE,
-                null,
-                opcoes,
-                opcoes[0]
-        );
-
-        switch (escolha) {
-
-            case 0 -> iniciarNovaPartida();
-
-            case 1 -> escolherDificuldadeFimPartida();
-
-            case 2 -> voltarAoMenuInicial();
-
-            default -> {
-                // Mantém o tabuleiro finalizado visível.
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Não foi possível salvar o ranking:\n"
+                                + e.getMessage(),
+                        "Ranking",
+                        JOptionPane.WARNING_MESSAGE
+                );
             }
         }
-    }
 
-    private void escolherDificuldadeFimPartida() {
+        final boolean rankingSalvo = salvouRanking;
 
-        JComboBox<Dificuldade> seletor =
-                new JComboBox<>(new Dificuldade[]{
-                        Dificuldade.FACIL,
-                        Dificuldade.MEDIO,
-                        Dificuldade.DIFICIL,
-                        Dificuldade.INFERNO
-                });
+        botaoPausar.setEnabled(false);
+        botaoDica.setEnabled(false);
 
-        seletor.setSelectedItem(dificuldadeAtual);
+        // Abre depois que a jogada atual terminar
+        // de ser processada pelo Swing.
+        SwingUtilities.invokeLater(() -> {
 
-        TemaSakura.estilizarSeletor(seletor);
-
-        int resposta = JOptionPane.showConfirmDialog(
-                this,
-                seletor,
-                "Escolha a dificuldade da próxima partida",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
-
-        if (resposta == JOptionPane.OK_OPTION) {
-
-            Dificuldade nova =
-                    (Dificuldade) seletor.getSelectedItem();
-
-            if (nova != null) {
-                dificuldadeAtual = nova;
-                iniciarNovaPartida();
+            if (!isDisplayable()) {
+                return;
             }
 
-        } else {
-
-            mostrarOpcoesFimPartida(
-                    "A partida foi finalizada.\n"
-                            + "Escolha como deseja continuar.",
-                    tabuleiro.isVenceu()
+            TelaFimPartida telaFim = new TelaFimPartida(
+                    this,
+                    venceu,
+                    jogadorFinal,
+                    dificuldadeFinal,
+                    tempoFinal,
+                    pontos,
+                    rankingSalvo
             );
-        }
+
+            TelaFimPartida.Acao acao =
+                    telaFim.mostrar();
+
+            switch (acao) {
+
+                case JOGAR_NOVAMENTE ->
+                        iniciarNovaPartida();
+
+                case MUDAR_DIFICULDADE -> {
+                    Dificuldade nova =
+                            telaFim.getDificuldadeSelecionada();
+
+                    if (nova != null) {
+                        dificuldadeAtual = nova;
+                        iniciarNovaPartida();
+                    }
+                }
+
+                case VOLTAR_MENU ->
+                        voltarAoMenuInicial();
+            }
+        });
     }
 
     private void voltarAoMenuInicial() {
@@ -1090,7 +1029,8 @@ public class TelaPrincipal extends JFrame {
              i < Math.min(10, registros.size());
              i++) {
 
-            RegistroPartida registro = registros.get(i);
+            RegistroPartida registro =
+                    registros.get(i);
 
             texto.append(i + 1)
                     .append(". ")
