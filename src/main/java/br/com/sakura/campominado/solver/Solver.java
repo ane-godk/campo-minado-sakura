@@ -5,6 +5,7 @@ import br.com.sakura.campominado.domain.Celula;
 import br.com.sakura.campominado.domain.Tabuleiro;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 public class Solver {
@@ -19,6 +20,11 @@ public class Solver {
             int coluna,
             TipoJogada tipo,
             String explicacao
+    ) {}
+
+    private record Restricao(
+            BitSet celulas,
+            int minasRestantes
     ) {}
 
     private final Tabuleiro tabuleiro;
@@ -39,25 +45,110 @@ public class Solver {
             return null;
         }
 
+        List<Restricao> restricoes =
+                construirRestricoes();
+
+        if (restricoes == null) {
+            // Informações contraditórias:
+            // não é seguro sugerir uma jogada.
+            return null;
+        }
+
+        // Primeiro, procura deduções diretas.
+        for (Restricao restricao : restricoes) {
+
+            Jogada jogada = extrairJogada(
+                    restricao,
+                    "Dedução direta a partir dos números "
+                            + "e das bandeiras visíveis."
+            );
+
+            if (jogada != null) {
+                return jogada;
+            }
+        }
+
+        // Depois, compara conjuntos de células
+        // desconhecidas de restrições diferentes.
+        for (int i = 0; i < restricoes.size(); i++) {
+
+            for (int j = 0;
+                 j < restricoes.size(); j++) {
+
+                if (i == j) {
+                    continue;
+                }
+
+                Restricao menor = restricoes.get(i);
+                Restricao maior = restricoes.get(j);
+
+                if (!ehSubconjunto(
+                        menor.celulas(),
+                        maior.celulas())) {
+                    continue;
+                }
+
+                BitSet diferenca =
+                        (BitSet) maior.celulas().clone();
+
+                diferenca.andNot(menor.celulas());
+
+                if (diferenca.isEmpty()) {
+                    continue;
+                }
+
+                int minasDiferenca =
+                        maior.minasRestantes()
+                                - menor.minasRestantes();
+
+                if (minasDiferenca < 0
+                        || minasDiferenca
+                        > diferenca.cardinality()) {
+                    continue;
+                }
+
+                Restricao deduzida = new Restricao(
+                        diferenca,
+                        minasDiferenca
+                );
+
+                Jogada jogada = extrairJogada(
+                        deduzida,
+                        "Dedução por subconjuntos: "
+                                + "a comparação de dois grupos "
+                                + "de células permite determinar "
+                                + "esta jogada."
+                );
+
+                if (jogada != null) {
+                    return jogada;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private List<Restricao> construirRestricoes() {
+
+        List<Restricao> resultado =
+                new ArrayList<>();
+
         for (int linha = 0;
              linha < tabuleiro.getLinhas(); linha++) {
 
             for (int coluna = 0;
                  coluna < tabuleiro.getColunas(); coluna++) {
 
-                Celula atual = tabuleiro.getCelula(
-                        linha, coluna
-                );
+                Celula atual =
+                        tabuleiro.getCelula(linha, coluna);
 
                 if (!atual.isRevelada()
                         || atual.isMinada()) {
                     continue;
                 }
 
-                // Nome correto do método em Celula.java
-                int numero = atual.getMinasVizinhas();
-
-                List<int[]> fechadas = new ArrayList<>();
+                BitSet desconhecidas = new BitSet();
                 int bandeiras = 0;
 
                 for (int dl = -1; dl <= 1; dl++) {
@@ -85,66 +176,131 @@ public class Solver {
                             bandeiras++;
 
                         } else if (!vizinha.isRevelada()) {
-                            fechadas.add(
-                                    new int[]{nl, nc}
+
+                            desconhecidas.set(
+                                    indice(nl, nc)
                             );
                         }
                     }
                 }
 
-                if (fechadas.isEmpty()) {
-                    continue;
+                int restantes =
+                        atual.getMinasVizinhas()
+                                - bandeiras;
+
+                if (restantes < 0
+                        || restantes
+                        > desconhecidas.cardinality()) {
+
+                    return null;
                 }
 
-                // Regra 1:
-                // Se todas as minas vizinhas já estão
-                // marcadas, as demais células são seguras.
-                if (bandeiras == numero) {
+                if (!desconhecidas.isEmpty()) {
 
-                    int[] posicao = fechadas.get(0);
-
-                    return new Jogada(
-                            posicao[0],
-                            posicao[1],
-                            TipoJogada.REVELAR,
-                            "As " + numero
-                                    + " minas vizinhas já estão "
-                                    + "marcadas. Esta célula pode "
-                                    + "ser revelada, desde que as "
-                                    + "bandeiras estejam corretas."
-                    );
-                }
-
-                // Regra 2:
-                // Se o número de minas restantes coincide
-                // com o número de células fechadas,
-                // todas essas células são minas.
-                if (numero - bandeiras
-                        == fechadas.size()) {
-
-                    int[] posicao = fechadas.get(0);
-
-                    return new Jogada(
-                            posicao[0],
-                            posicao[1],
-                            TipoJogada.MARCAR_MINA,
-                            "O número " + numero
-                                    + " indica que todas as "
-                                    + fechadas.size()
-                                    + " células fechadas restantes "
-                                    + "contêm minas."
-                    );
+                    resultado.add(new Restricao(
+                            desconhecidas,
+                            restantes
+                    ));
                 }
             }
         }
 
-        return null;
+        // Detecta contradições entre restrições
+        // com o mesmo conjunto de células.
+        for (int i = 0; i < resultado.size(); i++) {
+
+            for (int j = i + 1;
+                 j < resultado.size(); j++) {
+
+                Restricao a = resultado.get(i);
+                Restricao b = resultado.get(j);
+
+                if (a.celulas().equals(b.celulas())
+                        && a.minasRestantes()
+                        != b.minasRestantes()) {
+
+                    return null;
+                }
+            }
+        }
+
+        return resultado;
+    }
+
+    private Jogada extrairJogada(
+            Restricao restricao,
+            String explicacao
+    ) {
+
+        int quantidade =
+                restricao.celulas().cardinality();
+
+        if (quantidade == 0) {
+            return null;
+        }
+
+        TipoJogada tipo;
+
+        if (restricao.minasRestantes() == 0) {
+            tipo = TipoJogada.REVELAR;
+
+        } else if (restricao.minasRestantes()
+                == quantidade) {
+
+            tipo = TipoJogada.MARCAR_MINA;
+
+        } else {
+            return null;
+        }
+
+        int indice =
+                restricao.celulas().nextSetBit(0);
+
+        int linha = indice / tabuleiro.getColunas();
+        int coluna = indice % tabuleiro.getColunas();
+
+        String descricao = tipo == TipoJogada.REVELAR
+                ? "Revelar célula."
+                : "Marcar célula como mina.";
+
+        return new Jogada(
+                linha,
+                coluna,
+                tipo,
+                explicacao + " " + descricao
+        );
+    }
+
+    private boolean ehSubconjunto(
+            BitSet menor,
+            BitSet maior
+    ) {
+
+        BitSet copia = (BitSet) menor.clone();
+        copia.andNot(maior);
+
+        return copia.isEmpty();
+    }
+
+    private int indice(int linha, int coluna) {
+        return linha * tabuleiro.getColunas() + coluna;
     }
 
     public boolean executarJogada(Jogada jogada) {
 
         if (jogada == null
                 || tabuleiro.isJogoEncerrado()) {
+            return false;
+        }
+
+        // Recalcula a dedução para evitar executar
+        // uma dica antiga após mudanças no tabuleiro.
+        Jogada atual = encontrarJogada();
+
+        if (atual == null
+                || atual.linha() != jogada.linha()
+                || atual.coluna() != jogada.coluna()
+                || atual.tipo() != jogada.tipo()) {
             return false;
         }
 
