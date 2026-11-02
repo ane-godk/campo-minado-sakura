@@ -5,7 +5,6 @@ import java.awt.*;
 
 import br.com.sakura.campominado.domain.Tabuleiro;
 import br.com.sakura.campominado.util.AudioManager;
-import br.com.sakura.campominado.ui.PainelTabuleiro;
 
 public class TelaPrincipal extends JFrame {
 

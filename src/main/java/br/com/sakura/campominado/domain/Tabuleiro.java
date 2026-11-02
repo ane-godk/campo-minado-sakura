@@ -39,6 +39,17 @@ public class Tabuleiro {
 
     // Construtor auxiliar de testes
     public Tabuleiro(boolean[][] disposicaoMinas) {
+
+        if (disposicaoMinas == null || disposicaoMinas.length == 0) {
+            throw new IllegalArgumentException(
+                    "O tabuleiro deve possuir pelo menos uma linha.");
+        }
+
+        if (disposicaoMinas[0] == null || disposicaoMinas[0].length == 0) {
+            throw new IllegalArgumentException(
+                    "O tabuleiro deve possuir pelo menos uma coluna.");
+        }
+
         this.linhas = disposicaoMinas.length;
         this.colunas = disposicaoMinas[0].length;
         this.grade = new Celula[linhas][colunas];
@@ -46,8 +57,16 @@ public class Tabuleiro {
         int totalMinas = 0;
 
         for (int l = 0; l < linhas; l++) {
+
+            if (disposicaoMinas[l] == null
+                    || disposicaoMinas[l].length != colunas) {
+                throw new IllegalArgumentException(
+                        "Todas as linhas devem possuir a mesma quantidade de colunas.");
+            }
+
             for (int c = 0; c < colunas; c++) {
                 this.grade[l][c] = new Celula();
+
                 if (disposicaoMinas[l][c]) {
                     this.grade[l][c].definirMinada(true);
                     totalMinas++;
@@ -236,5 +255,4 @@ public class Tabuleiro {
     public boolean isVenceu() {
         return venceu;
     }
-
 }
