@@ -3,123 +3,120 @@ package br.com.sakura.campominado.ui;
 
 import br.com.sakura.campominado.domain.ConfiguracaoJogo;
 import br.com.sakura.campominado.domain.Dificuldade;
+import br.com.sakura.campominado.domain.RegistroPartida;
 import br.com.sakura.campominado.domain.Tabuleiro;
+import br.com.sakura.campominado.service.RankingService;
+import br.com.sakura.campominado.solver.TestadorPartida;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDateTime;
+import java.util.List;
 
 public class TelaPrincipal extends JFrame {
 
     private Tabuleiro tabuleiro;
     private PainelTabuleiro painelTabuleiro;
+    private TestadorPartida testador;
 
-    private final JPanel painelPrincipal;
-    private final JPanel areaTabuleiro;
+    private final JPanel areaTabuleiro =
+            new JPanel(new BorderLayout());
 
-    private final JLabel labelVidas;
-    private final JLabel labelMinas;
+    private final JLabel labelVidas = new JLabel();
+    private final JLabel labelMinas = new JLabel();
+    private final JLabel labelTempo = new JLabel();
+    private final JLabel labelPontos = new JLabel();
 
-    private final JComboBox<Dificuldade> seletorDificuldade;
+    private final JComboBox<Dificuldade> seletorDificuldade =
+            new JComboBox<>(new Dificuldade[]{
+                    Dificuldade.FACIL,
+                    Dificuldade.MEDIO,
+                    Dificuldade.DIFICIL,
+                    Dificuldade.INFERNO
+            });
+
+    private final RankingService rankingService =
+            new RankingService();
+
+    private final Timer cronometro;
+    private Timer timerAutojogo;
+
+    private int segundos;
+    private boolean partidaIniciada;
+    private boolean resultadoProcessado;
+    private String nomeJogador = "Jogador";
 
     public TelaPrincipal() {
 
         setTitle("Campo Minado - Sakura");
-        setDefaultCloseOperation(
-                JFrame.EXIT_ON_CLOSE
-        );
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setMinimumSize(new Dimension(600, 480));
 
-        setMinimumSize(new Dimension(450, 450));
+        JPanel principal =
+                new JPanel(new BorderLayout(8, 8));
 
-        painelPrincipal = new JPanel(
-                new BorderLayout(8, 8)
-        );
-
-        painelPrincipal.setBackground(
+        principal.setBackground(
                 new Color(255, 253, 240)
         );
 
-        painelPrincipal.setBorder(
+        principal.setBorder(
                 BorderFactory.createEmptyBorder(
                         10, 10, 10, 10
                 )
         );
 
-        JPanel painelSuperior = new JPanel(
-                new FlowLayout(
-                        FlowLayout.CENTER,
-                        10,
-                        5
-                )
+        // Duas linhas para exibir todos os controles.
+        JPanel controles = new JPanel(
+                new GridLayout(2, 4, 8, 8)
         );
 
-        painelSuperior.setOpaque(false);
+        controles.setOpaque(false);
 
-        seletorDificuldade = new JComboBox<>(
-                new Dificuldade[]{
-                        Dificuldade.FACIL,
-                        Dificuldade.MEDIO,
-                        Dificuldade.DIFICIL,
-                        Dificuldade.INFERNO
-                }
-        );
+        JButton reiniciar = new JButton("Reiniciar");
+        JButton ranking = new JButton("Ranking");
+        JButton jogador = new JButton("Jogador");
+        JButton passo = new JButton("Próximo passo");
+        JButton autojogar =
+                new JButton("Autojogar / Testar");
 
-        JButton botaoReiniciar =
-                new JButton("Reiniciar");
+        controles.add(new JLabel("Dificuldade:"));
+        controles.add(seletorDificuldade);
+        controles.add(reiniciar);
+        controles.add(jogador);
+        controles.add(ranking);
+        controles.add(passo);
+        controles.add(autojogar);
 
-        labelVidas = new JLabel();
-        labelMinas = new JLabel();
+        JPanel informacoes =
+                new JPanel(new FlowLayout(
+                        FlowLayout.CENTER, 15, 5
+                ));
 
-        painelSuperior.add(
-                new JLabel("Dificuldade:")
-        );
+        informacoes.setOpaque(false);
 
-        painelSuperior.add(seletorDificuldade);
-        painelSuperior.add(botaoReiniciar);
+        informacoes.add(labelVidas);
+        informacoes.add(labelMinas);
+        informacoes.add(labelTempo);
+        informacoes.add(labelPontos);
 
-        JPanel painelInformacoes = new JPanel(
-                new FlowLayout(
-                        FlowLayout.CENTER,
-                        20,
-                        5
-                )
-        );
-
-        painelInformacoes.setOpaque(false);
-        painelInformacoes.add(labelVidas);
-        painelInformacoes.add(labelMinas);
-
-        JPanel cabecalho = new JPanel(
-                new BorderLayout()
-        );
+        JPanel cabecalho =
+                new JPanel(new BorderLayout(0, 8));
 
         cabecalho.setOpaque(false);
-        cabecalho.add(
-                painelSuperior,
-                BorderLayout.NORTH
-        );
+        cabecalho.add(controles, BorderLayout.NORTH);
+        cabecalho.add(informacoes, BorderLayout.SOUTH);
 
-        cabecalho.add(
-                painelInformacoes,
-                BorderLayout.SOUTH
-        );
+        principal.add(cabecalho, BorderLayout.NORTH);
+        principal.add(areaTabuleiro, BorderLayout.CENTER);
 
-        areaTabuleiro = new JPanel(
-                new BorderLayout()
-        );
+        setContentPane(principal);
 
-        painelPrincipal.add(
-                cabecalho,
-                BorderLayout.NORTH
-        );
+        cronometro = new Timer(1000, evento -> {
+            segundos++;
+            atualizarInformacoes();
+        });
 
-        painelPrincipal.add(
-                areaTabuleiro,
-                BorderLayout.CENTER
-        );
-
-        setContentPane(painelPrincipal);
-
-        botaoReiniciar.addActionListener(
+        reiniciar.addActionListener(
                 evento -> iniciarNovaPartida()
         );
 
@@ -127,11 +124,33 @@ public class TelaPrincipal extends JFrame {
                 evento -> iniciarNovaPartida()
         );
 
+        ranking.addActionListener(
+                evento -> mostrarRanking()
+        );
+
+        jogador.addActionListener(
+                evento -> alterarJogador()
+        );
+
+        passo.addActionListener(
+                evento -> executarPasso()
+        );
+
+        autojogar.addActionListener(
+                evento -> executarAutojogo()
+        );
+
         iniciarNovaPartida();
-        setLocationRelativeTo(null);
     }
 
     private void iniciarNovaPartida() {
+
+        pararAutojogo();
+        cronometro.stop();
+
+        segundos = 0;
+        partidaIniciada = false;
+        resultadoProcessado = false;
 
         Dificuldade dificuldade =
                 (Dificuldade) seletorDificuldade
@@ -149,18 +168,20 @@ public class TelaPrincipal extends JFrame {
                         3,
                         0,
                         dificuldade,
-                        "Jogador"
+                        nomeJogador
                 );
 
         tabuleiro = new Tabuleiro(configuracao);
+        testador = new TestadorPartida(tabuleiro);
 
         painelTabuleiro = new PainelTabuleiro(
                 tabuleiro,
-                this::atualizarInformacoes
+                this::atualizarInformacoes,
+                this::iniciarCronometro,
+                this::encerrarPartida
         );
 
         areaTabuleiro.removeAll();
-
         areaTabuleiro.add(
                 painelTabuleiro,
                 BorderLayout.CENTER
@@ -169,13 +190,13 @@ public class TelaPrincipal extends JFrame {
         atualizarInformacoes();
 
         int largura = Math.max(
-                450,
-                dificuldade.getColunas() * 30 + 40
+                650,
+                dificuldade.getColunas() * 30 + 60
         );
 
         int altura = Math.max(
-                450,
-                dificuldade.getLinhas() * 30 + 130
+                520,
+                dificuldade.getLinhas() * 30 + 210
         );
 
         setSize(largura, altura);
@@ -185,23 +206,323 @@ public class TelaPrincipal extends JFrame {
         areaTabuleiro.repaint();
     }
 
+    private void iniciarCronometro() {
+
+        if (!partidaIniciada) {
+            partidaIniciada = true;
+
+            if (!tabuleiro.isJogoEncerrado()) {
+                cronometro.start();
+            }
+        }
+    }
+
+    private void executarPasso() {
+
+        if (tabuleiro.isJogoEncerrado()) {
+            return;
+        }
+
+        // Evita executar passos manuais enquanto
+        // o modo automático está em andamento.
+        if (timerAutojogo != null
+                && timerAutojogo.isRunning()) {
+            return;
+        }
+
+        iniciarCronometro();
+
+        if (testador.executarProximoPasso()) {
+            atualizarAposJogadaAutomatica();
+        }
+    }
+
+    private void executarAutojogo() {
+
+        if (tabuleiro.isJogoEncerrado()) {
+            return;
+        }
+
+        // Clicar novamente interrompe o autojogo.
+        if (timerAutojogo != null
+                && timerAutojogo.isRunning()) {
+
+            pararAutojogo();
+            return;
+        }
+
+        iniciarCronometro();
+
+        timerAutojogo = new Timer(60, evento -> {
+
+            if (!tabuleiro.isJogoEncerrado()) {
+
+                boolean executou =
+                        testador.executarProximoPasso();
+
+                if (!executou) {
+
+                    pararAutojogo();
+
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "O testador não encontrou "
+                                    + "mais jogadas.",
+                            "Teste interrompido",
+                            JOptionPane.WARNING_MESSAGE
+                    );
+
+                    return;
+                }
+            }
+
+            atualizarAposJogadaAutomatica();
+
+            if (tabuleiro.isJogoEncerrado()) {
+                pararAutojogo();
+            }
+        });
+
+        timerAutojogo.start();
+    }
+
+    private void atualizarAposJogadaAutomatica() {
+
+        painelTabuleiro.atualizarTabuleiro();
+        atualizarInformacoes();
+
+        if (tabuleiro.isJogoEncerrado()) {
+            encerrarPartida();
+        }
+    }
+
+    private void pararAutojogo() {
+
+        if (timerAutojogo != null) {
+            timerAutojogo.stop();
+            timerAutojogo = null;
+        }
+    }
+
     private void atualizarInformacoes() {
+
+        if (tabuleiro == null) {
+            return;
+        }
 
         labelVidas.setText(
                 "Vidas: " + tabuleiro.getVidas()
         );
 
         labelMinas.setText(
-                "Minas restantes: "
-                        + tabuleiro.getMinasRestantes()
+                "Minas: " + tabuleiro.getMinasRestantes()
+        );
+
+        labelTempo.setText(
+                "Tempo: " + segundos + "s"
+        );
+
+        labelPontos.setText(
+                "Pontos: " + calcularPontuacao()
+        );
+    }
+
+    private int calcularPontuacao() {
+
+        if (tabuleiro == null) {
+            return 0;
+        }
+
+        int reveladas = 0;
+
+        for (int linha = 0;
+             linha < tabuleiro.getLinhas(); linha++) {
+
+            for (int coluna = 0;
+                 coluna < tabuleiro.getColunas(); coluna++) {
+
+                if (tabuleiro.getCelula(
+                        linha, coluna
+                ).isRevelada()
+                        && !tabuleiro.getCelula(
+                                linha, coluna
+                        ).isMinada()) {
+
+                    reveladas++;
+                }
+            }
+        }
+
+        double multiplicador = tabuleiro
+                .getConfiguracao()
+                .getDificuldade()
+                .getMultiplicador();
+
+        int base = reveladas * 10
+                + tabuleiro.getMinasEncontradas() * 20;
+
+        int bonusVidas = tabuleiro.getVidas() * 50;
+
+        return Math.max(
+                0,
+                (int) Math.round(
+                        (base + bonusVidas) * multiplicador
+                ) - segundos
+        );
+    }
+
+    private void encerrarPartida() {
+
+        if (resultadoProcessado) {
+            return;
+        }
+
+        resultadoProcessado = true;
+
+        pararAutojogo();
+        cronometro.stop();
+        atualizarInformacoes();
+
+        if (tabuleiro.isVenceu()) {
+
+            int pontos = calcularPontuacao();
+
+            try {
+
+                rankingService.salvar(
+                        new RegistroPartida(
+                                nomeJogador,
+                                tabuleiro.getConfiguracao()
+                                        .getDificuldade()
+                                        .getNome(),
+                                pontos,
+                                segundos,
+                                LocalDateTime.now()
+                        )
+                );
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Vitória!\n"
+                                + "Jogador: " + nomeJogador
+                                + "\nPontuação: " + pontos
+                                + "\nTempo: " + segundos + "s"
+                                + "\nRanking atualizado.",
+                        "Campo Minado Sakura",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
+            } catch (IllegalStateException e) {
+
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Vitória!\n"
+                                + "Não foi possível salvar "
+                                + "o ranking:\n"
+                                + e.getMessage(),
+                        "Aviso",
+                        JOptionPane.WARNING_MESSAGE
+                );
+            }
+
+        } else {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Fim de jogo!\n"
+                            + "Pontuação: "
+                            + calcularPontuacao()
+                            + "\nTempo: " + segundos + "s",
+                    "Derrota",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
+    }
+
+    private void alterarJogador() {
+
+        String nome = JOptionPane.showInputDialog(
+                this,
+                "Nome do jogador:",
+                nomeJogador
+        );
+
+        if (nome != null && !nome.isBlank()) {
+            nomeJogador = nome.trim();
+        }
+    }
+
+    private void mostrarRanking() {
+
+        List<RegistroPartida> registros;
+
+        try {
+            registros = rankingService.listar();
+
+        } catch (IllegalStateException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    e.getMessage(),
+                    "Erro no ranking",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+            return;
+        }
+
+        if (registros.isEmpty()) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Nenhuma vitória registrada.",
+                    "Ranking",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            return;
+        }
+
+        StringBuilder texto = new StringBuilder();
+
+        for (int i = 0;
+             i < Math.min(10, registros.size()); i++) {
+
+            RegistroPartida registro = registros.get(i);
+
+            texto.append(i + 1)
+                    .append(". ")
+                    .append(registro.jogador())
+                    .append(" | ")
+                    .append(registro.dificuldade())
+                    .append(" | ")
+                    .append(registro.pontuacao())
+                    .append(" pontos | ")
+                    .append(registro.tempoSegundos())
+                    .append("s\n");
+        }
+
+        JTextArea area = new JTextArea(
+                texto.toString(), 12, 40
+        );
+
+        area.setEditable(false);
+        area.setFont(new Font(
+                "Monospaced", Font.PLAIN, 13
+        ));
+
+        JOptionPane.showMessageDialog(
+                this,
+                new JScrollPane(area),
+                "Top 10 - Ranking Sakura",
+                JOptionPane.INFORMATION_MESSAGE
         );
     }
 
     public static void main(String[] args) {
 
         SwingUtilities.invokeLater(
-                () -> new TelaPrincipal()
-                        .setVisible(true)
+                () -> new TelaPrincipal().setVisible(true)
         );
     }
 }
