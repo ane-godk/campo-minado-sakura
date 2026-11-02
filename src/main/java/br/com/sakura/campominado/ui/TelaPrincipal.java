@@ -17,6 +17,15 @@ import java.util.List;
 
 public class TelaPrincipal extends JFrame {
 
+public void selecionarDificuldade(Dificuldade dificuldade) {
+
+    if (dificuldade == null) {
+        return;
+    }
+
+    seletorDificuldade.setSelectedItem(dificuldade);
+}
+
     private Tabuleiro tabuleiro;
     private PainelTabuleiro painelTabuleiro;
     private TestadorPartida testador;
