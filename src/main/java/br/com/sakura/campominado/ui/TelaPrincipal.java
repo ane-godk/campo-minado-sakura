@@ -17,15 +17,6 @@ import java.util.List;
 
 public class TelaPrincipal extends JFrame {
 
-public void selecionarDificuldade(Dificuldade dificuldade) {
-
-    if (dificuldade == null) {
-        return;
-    }
-
-    seletorDificuldade.setSelectedItem(dificuldade);
-}
-
     private Tabuleiro tabuleiro;
     private PainelTabuleiro painelTabuleiro;
     private TestadorPartida testador;
@@ -41,14 +32,13 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
     private final JLabel labelMinas = new JLabel();
     private final JLabel labelTempo = new JLabel();
     private final JLabel labelPontos = new JLabel();
+    private final JLabel labelDificuldade = new JLabel();
 
-    private final JComboBox<Dificuldade> seletorDificuldade =
-            new JComboBox<>(new Dificuldade[]{
-                    Dificuldade.FACIL,
-                    Dificuldade.MEDIO,
-                    Dificuldade.DIFICIL,
-                    Dificuldade.INFERNO
-            });
+    private final JButton botaoDica =
+            TemaSakura.criarBotao("Dica (3/3)");
+
+    private final JButton botaoPausar =
+            TemaSakura.criarBotao("Pausar");
 
     private final RankingService rankingService =
             new RankingService();
@@ -56,9 +46,17 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
     private final Timer cronometro;
     private Timer timerAutojogo;
 
+    private Dificuldade dificuldadeAtual = Dificuldade.FACIL;
+
     private int segundos;
+    private int dicasRestantes = 3;
+
     private boolean partidaIniciada;
     private boolean resultadoProcessado;
+    private boolean pausado;
+
+    private boolean autosolveAtivo;
+
     private String nomeJogador = "Jogador";
 
     public TelaPrincipal() {
@@ -71,6 +69,7 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         );
 
         principal.setBackground(TemaSakura.FUNDO);
+
         principal.setBorder(
                 new EmptyBorder(10, 10, 10, 10)
         );
@@ -82,7 +81,9 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         areaTabuleiro.setBorder(
                 BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(
-                                TemaSakura.BORDA, 2, true
+                                TemaSakura.BORDA,
+                                2,
+                                true
                         ),
                         new EmptyBorder(5, 5, 5, 5)
                 )
@@ -126,10 +127,25 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         setContentPane(principal);
 
         cronometro = new Timer(1000, evento -> {
-            segundos++;
-            atualizarInformacoes();
+
+            if (!pausado && !resultadoProcessado) {
+                segundos++;
+                atualizarInformacoes();
+            }
         });
 
+        iniciarNovaPartida();
+    }
+
+    public void selecionarDificuldade(
+            Dificuldade dificuldade
+    ) {
+
+        if (dificuldade == null) {
+            return;
+        }
+
+        dificuldadeAtual = dificuldade;
         iniciarNovaPartida();
     }
 
@@ -144,7 +160,9 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         cabecalho.setBorder(
                 BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(
-                                TemaSakura.BORDA, 2, true
+                                TemaSakura.BORDA,
+                                2,
+                                true
                         ),
                         new EmptyBorder(10, 10, 10, 10)
                 )
@@ -156,57 +174,38 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         );
 
         titulo.setFont(
-                new Font("SansSerif", Font.BOLD, 22)
+                new Font("SansSerif", Font.BOLD, 20)
         );
 
         titulo.setForeground(TemaSakura.ROSA_ESCURO);
 
-        JPanel controles = new JPanel(
-                new GridLayout(3, 3, 6, 6)
+        JPanel linhaSuperior = new JPanel(
+                new BorderLayout(8, 0)
         );
 
-        controles.setOpaque(false);
+        linhaSuperior.setOpaque(false);
 
-        JLabel dificuldade = new JLabel(
-                "Dificuldade:",
-                SwingConstants.CENTER
+        labelDificuldade.setFont(
+                new Font("SansSerif", Font.BOLD, 12)
         );
 
-        TemaSakura.estilizarTexto(dificuldade);
-        TemaSakura.estilizarSeletor(seletorDificuldade);
+        labelDificuldade.setForeground(
+                TemaSakura.ROSA_ESCURO
+        );
 
-        JButton reiniciar =
-                TemaSakura.criarBotao("Reiniciar");
+        linhaSuperior.add(
+                labelDificuldade,
+                BorderLayout.CENTER
+        );
 
-        JButton jogador =
-                TemaSakura.criarBotao("Jogador");
+        botaoPausar.setPreferredSize(
+                new Dimension(115, 38)
+        );
 
-        JButton ranking =
-                TemaSakura.criarBotao("Ranking");
-
-        JButton passo =
-                TemaSakura.criarBotao("Próximo passo");
-
-        JButton autojogar =
-                TemaSakura.criarBotao("Autojogar / Testar");
-
-        JButton dica =
-                TemaSakura.criarBotao("Dica lógica");
-
-        JButton passoLogico =
-                TemaSakura.criarBotao("Passo lógico");
-
-        controles.add(dificuldade);
-        controles.add(seletorDificuldade);
-        controles.add(reiniciar);
-
-        controles.add(jogador);
-        controles.add(ranking);
-        controles.add(passo);
-
-        controles.add(autojogar);
-        controles.add(dica);
-        controles.add(passoLogico);
+        linhaSuperior.add(
+                botaoPausar,
+                BorderLayout.EAST
+        );
 
         JPanel informacoes = new JPanel(
                 new GridLayout(1, 4, 6, 0)
@@ -224,47 +223,73 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         informacoes.add(criarCartao(labelTempo));
         informacoes.add(criarCartao(labelPontos));
 
+        JPanel linhaDica = new JPanel(
+                new BorderLayout()
+        );
+
+        linhaDica.setOpaque(false);
+
+        JLabel explicacao = new JLabel(
+                "Use uma dica para encontrar uma jogada segura."
+        );
+
+        explicacao.setFont(
+                new Font("SansSerif", Font.PLAIN, 12)
+        );
+
+        explicacao.setForeground(TemaSakura.TEXTO);
+
+        linhaDica.add(
+                explicacao,
+                BorderLayout.CENTER
+        );
+
+        botaoDica.setPreferredSize(
+                new Dimension(145, 38)
+        );
+
+        linhaDica.add(
+                botaoDica,
+                BorderLayout.EAST
+        );
+
         JPanel centro = new JPanel(
-                new BorderLayout(0, 10)
+                new BorderLayout(0, 9)
         );
 
         centro.setOpaque(false);
-        centro.add(controles, BorderLayout.CENTER);
-        centro.add(informacoes, BorderLayout.SOUTH);
 
-        cabecalho.add(titulo, BorderLayout.NORTH);
-        cabecalho.add(centro, BorderLayout.CENTER);
-
-        reiniciar.addActionListener(
-                evento -> iniciarNovaPartida()
+        centro.add(
+                linhaSuperior,
+                BorderLayout.NORTH
         );
 
-        seletorDificuldade.addActionListener(
-                evento -> iniciarNovaPartida()
+        centro.add(
+                informacoes,
+                BorderLayout.CENTER
         );
 
-        jogador.addActionListener(
-                evento -> alterarJogador()
+        centro.add(
+                linhaDica,
+                BorderLayout.SOUTH
         );
 
-        ranking.addActionListener(
-                evento -> mostrarRanking()
+        cabecalho.add(
+                titulo,
+                BorderLayout.NORTH
         );
 
-        passo.addActionListener(
-                evento -> executarPasso()
+        cabecalho.add(
+                centro,
+                BorderLayout.CENTER
         );
 
-        autojogar.addActionListener(
-                evento -> executarAutojogo()
+        botaoPausar.addActionListener(
+                evento -> abrirMenuPausa()
         );
 
-        dica.addActionListener(
-                evento -> mostrarDicaLogica()
-        );
-
-        passoLogico.addActionListener(
-                evento -> executarPassoLogico()
+        botaoDica.addActionListener(
+                evento -> solicitarDica()
         );
 
         return cabecalho;
@@ -277,10 +302,12 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         );
 
         label.setFont(
-                new Font("SansSerif", Font.BOLD, 13)
+                new Font("SansSerif", Font.BOLD, 12)
         );
 
-        label.setForeground(TemaSakura.ROSA_ESCURO);
+        label.setForeground(
+                TemaSakura.ROSA_ESCURO
+        );
     }
 
     private JPanel criarCartao(JLabel label) {
@@ -294,41 +321,46 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         cartao.setBorder(
                 BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(
-                                TemaSakura.BORDA, 1, true
+                                TemaSakura.BORDA,
+                                1,
+                                true
                         ),
-                        new EmptyBorder(8, 3, 8, 3)
+                        new EmptyBorder(9, 3, 9, 3)
                 )
         );
 
-        cartao.add(label, BorderLayout.CENTER);
+        cartao.add(
+                label,
+                BorderLayout.CENTER
+        );
+
         return cartao;
     }
 
     private void iniciarNovaPartida() {
 
         pararAutojogo();
-        cronometro.stop();
+
+        if (cronometro != null) {
+            cronometro.stop();
+        }
 
         segundos = 0;
+        dicasRestantes = 3;
+
         partidaIniciada = false;
         resultadoProcessado = false;
-
-        Dificuldade dificuldade =
-                (Dificuldade) seletorDificuldade
-                        .getSelectedItem();
-
-        if (dificuldade == null) {
-            return;
-        }
+        pausado = false;
+        autosolveAtivo = false;
 
         ConfiguracaoJogo configuracao =
                 new ConfiguracaoJogo(
-                        dificuldade.getLinhas(),
-                        dificuldade.getColunas(),
-                        dificuldade.getMinas(),
+                        dificuldadeAtual.getLinhas(),
+                        dificuldadeAtual.getColunas(),
+                        dificuldadeAtual.getMinas(),
                         3,
                         0,
-                        dificuldade,
+                        dificuldadeAtual,
                         nomeJogador
                 );
 
@@ -351,8 +383,11 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         ajustarTamanhoJanela();
 
         SwingUtilities.invokeLater(() -> {
+
             rolagemTabuleiro.getViewport()
-                    .setViewPosition(new Point(0, 0));
+                    .setViewPosition(
+                            new Point(0, 0)
+                    );
         });
     }
 
@@ -382,21 +417,21 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
 
         int larguraExtra =
                 margens.left
-                + margens.right
-                + margensTabuleiro.left
-                + margensTabuleiro.right
-                + decoracao.left
-                + decoracao.right;
+                        + margens.right
+                        + margensTabuleiro.left
+                        + margensTabuleiro.right
+                        + decoracao.left
+                        + decoracao.right;
 
         int alturaExtra =
                 margens.top
-                + margens.bottom
-                + margensTabuleiro.top
-                + margensTabuleiro.bottom
-                + decoracao.top
-                + decoracao.bottom
-                + tamanhoCabecalho.height
-                + 8;
+                        + margens.bottom
+                        + margensTabuleiro.top
+                        + margensTabuleiro.bottom
+                        + decoracao.top
+                        + decoracao.bottom
+                        + tamanhoCabecalho.height
+                        + 8;
 
         int larguraMaxima = Math.max(
                 350,
@@ -418,8 +453,6 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
                 alturaMaxima - alturaExtra
         );
 
-        // A grade cresce para aproveitar a área útil,
-        // sem deformar as células.
         int larguraDesejada = Math.max(
                 tamanhoGrade.width,
                 tamanhoCabecalho.width
@@ -429,7 +462,10 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
 
         int alturaDesejada = Math.max(
                 tamanhoGrade.height,
-                Math.min(larguraDesejada, alturaUtil)
+                Math.min(
+                        larguraDesejada,
+                        alturaUtil
+                )
         );
 
         int larguraViewport = Math.min(
@@ -449,7 +485,6 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
                 )
         );
 
-        // O pack mede a estrutura real da interface.
         pack();
 
         int larguraFinal = Math.min(
@@ -462,7 +497,11 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
                 alturaMaxima
         );
 
-        setSize(larguraFinal, alturaFinal);
+        setSize(
+                larguraFinal,
+                alturaFinal
+        );
+
         setLocationRelativeTo(null);
 
         revalidate();
@@ -471,44 +510,220 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
 
     private void iniciarCronometro() {
 
+        if (pausado
+                || resultadoProcessado
+                || tabuleiro.isJogoEncerrado()) {
+            return;
+        }
+
         if (!partidaIniciada) {
-
             partidaIniciada = true;
+        }
 
-            if (!tabuleiro.isJogoEncerrado()) {
-                cronometro.start();
-            }
+        if (!cronometro.isRunning()) {
+            cronometro.start();
         }
     }
 
-    private void executarPasso() {
+    private void solicitarDica() {
 
-        if (tabuleiro.isJogoEncerrado()
+        if (pausado
+                || resultadoProcessado
+                || tabuleiro.isJogoEncerrado()
                 || autojogoEmAndamento()) {
             return;
         }
 
-        iniciarCronometro();
+        if (dicasRestantes <= 0) {
 
-        if (testador.executarProximoPasso()) {
-            atualizarAposJogadaAutomatica();
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Você já utilizou as três dicas desta partida.",
+                    "Dicas esgotadas",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            return;
+        }
+
+        Solver.Jogada jogada =
+                solver.encontrarJogada();
+
+        if (jogada == null) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Ainda não existe uma dedução lógica segura.\n"
+                            + "Revele mais células e tente novamente.\n\n"
+                            + "Nenhuma dica foi consumida.",
+                    "Dica Sakura",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            return;
+        }
+
+        dicasRestantes--;
+        atualizarInformacoes();
+
+        String acao =
+                jogada.tipo() == Solver.TipoJogada.REVELAR
+                        ? "Revelar"
+                        : "Marcar como mina";
+
+        JOptionPane.showMessageDialog(
+                this,
+                acao
+                        + " a célula da linha "
+                        + (jogada.linha() + 1)
+                        + ", coluna "
+                        + (jogada.coluna() + 1)
+                        + ".\n\n"
+                        + jogada.explicacao()
+                        + "\n\nDicas restantes: "
+                        + dicasRestantes,
+                "Dica Sakura",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    private void abrirMenuPausa() {
+
+        if (resultadoProcessado
+                || tabuleiro.isJogoEncerrado()) {
+            return;
+        }
+
+        boolean autosolveEstavaAtivo =
+                autojogoEmAndamento();
+
+        if (autosolveEstavaAtivo) {
+            pararAutojogo();
+        }
+
+        pausado = true;
+        cronometro.stop();
+
+        boolean menuAberto = true;
+
+        while (menuAberto) {
+
+            TelaPausa telaPausa = new TelaPausa(
+                    this,
+                    nomeJogador,
+                    dificuldadeAtual.getNome(),
+                    segundos,
+                    autosolveEstavaAtivo
+            );
+
+            TelaPausa.Acao acao =
+                    telaPausa.mostrar();
+
+            switch (acao) {
+
+                case CONTINUAR -> {
+
+                    menuAberto = false;
+                    retomarPartida();
+
+                    if (autosolveEstavaAtivo) {
+                        iniciarAutojogo();
+                    }
+                }
+
+                case AUTOSOLVE -> {
+
+                    menuAberto = false;
+                    pausado = false;
+
+                    if (autosolveEstavaAtivo) {
+
+                        pararAutojogo();
+                        retomarPartida();
+
+                    } else {
+
+                        iniciarAutojogo();
+                    }
+                }
+
+                case ALTERAR_JOGADOR -> alterarJogador();
+
+                case RANKING -> mostrarRanking();
+
+                case REINICIAR -> {
+
+                    int confirmar =
+                            JOptionPane.showConfirmDialog(
+                                    this,
+                                    "Deseja reiniciar a partida atual?\n"
+                                            + "O progresso será perdido.",
+                                    "Reiniciar partida",
+                                    JOptionPane.YES_NO_OPTION,
+                                    JOptionPane.WARNING_MESSAGE
+                            );
+
+                    if (confirmar == JOptionPane.YES_OPTION) {
+
+                        menuAberto = false;
+                        iniciarNovaPartida();
+                    }
+                }
+
+                case VOLTAR_MENU -> {
+
+                    int confirmar =
+                            JOptionPane.showConfirmDialog(
+                                    this,
+                                    "Deseja voltar ao menu inicial?\n"
+                                            + "A partida atual será perdida.",
+                                    "Voltar ao menu",
+                                    JOptionPane.YES_NO_OPTION,
+                                    JOptionPane.WARNING_MESSAGE
+                            );
+
+                    if (confirmar == JOptionPane.YES_OPTION) {
+
+                        menuAberto = false;
+                        voltarAoMenuInicial();
+                    }
+                }
+            }
         }
     }
 
-    private void executarAutojogo() {
+    private void retomarPartida() {
 
-        if (tabuleiro.isJogoEncerrado()) {
+        pausado = false;
+
+        if (partidaIniciada
+                && !resultadoProcessado
+                && !tabuleiro.isJogoEncerrado()) {
+
+            cronometro.start();
+        }
+    }
+
+    private void iniciarAutojogo() {
+
+        if (resultadoProcessado
+                || tabuleiro.isJogoEncerrado()) {
             return;
         }
 
-        if (autojogoEmAndamento()) {
-            pararAutojogo();
-            return;
-        }
+        pararAutojogo();
+
+        pausado = false;
+        autosolveAtivo = true;
 
         iniciarCronometro();
 
         timerAutojogo = new Timer(60, evento -> {
+
+            if (pausado || resultadoProcessado) {
+                pararAutojogo();
+                return;
+            }
 
             if (!tabuleiro.isJogoEncerrado()) {
 
@@ -521,9 +736,8 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
 
                     JOptionPane.showMessageDialog(
                             this,
-                            "O testador não encontrou "
-                                    + "mais jogadas.",
-                            "Teste interrompido",
+                            "O Autosolve não encontrou mais jogadas.",
+                            "Autosolve interrompido",
                             JOptionPane.WARNING_MESSAGE
                     );
 
@@ -550,82 +764,12 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
     private void pararAutojogo() {
 
         if (timerAutojogo != null) {
+
             timerAutojogo.stop();
             timerAutojogo = null;
         }
-    }
 
-    private void mostrarDicaLogica() {
-
-        if (autojogoEmAndamento()) {
-            return;
-        }
-
-        Solver.Jogada jogada =
-                solver.encontrarJogada();
-
-        if (jogada == null) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Nenhuma jogada lógica disponível.\n"
-                            + "Revele mais células "
-                            + "ou continue manualmente.",
-                    "Dica lógica",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            return;
-        }
-
-        String acao =
-                jogada.tipo() == Solver.TipoJogada.REVELAR
-                        ? "Revelar"
-                        : "Marcar como mina";
-
-        JOptionPane.showMessageDialog(
-                this,
-                acao
-                        + " a célula da linha "
-                        + (jogada.linha() + 1)
-                        + ", coluna "
-                        + (jogada.coluna() + 1)
-                        + ".\n\n"
-                        + jogada.explicacao(),
-                "Dica lógica",
-                JOptionPane.INFORMATION_MESSAGE
-        );
-    }
-
-    private void executarPassoLogico() {
-
-        if (tabuleiro.isJogoEncerrado()
-                || autojogoEmAndamento()) {
-            return;
-        }
-
-        Solver.Jogada jogada =
-                solver.encontrarJogada();
-
-        if (jogada == null) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Nenhuma jogada lógica disponível.\n"
-                            + "O solver não fará "
-                            + "uma jogada aleatória.",
-                    "Solver lógico",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            return;
-        }
-
-        iniciarCronometro();
-
-        if (solver.executarJogada(jogada)) {
-            atualizarAposJogadaAutomatica();
-        }
+        autosolveAtivo = false;
     }
 
     private void atualizarAposJogadaAutomatica() {
@@ -659,6 +803,25 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         labelPontos.setText(
                 "★ Pontos: " + calcularPontuacao()
         );
+
+        labelDificuldade.setText(
+                "Dificuldade: " + dificuldadeAtual.getNome()
+        );
+
+        botaoDica.setText(
+                "Dica (" + dicasRestantes + "/3)"
+        );
+
+        botaoDica.setEnabled(
+                dicasRestantes > 0
+                        && !resultadoProcessado
+                        && !tabuleiro.isJogoEncerrado()
+        );
+
+        botaoPausar.setEnabled(
+                !resultadoProcessado
+                        && !tabuleiro.isJogoEncerrado()
+        );
     }
 
     private int calcularPontuacao() {
@@ -678,10 +841,12 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
                  coluna++) {
 
                 if (tabuleiro.getCelula(
-                        linha, coluna
+                        linha,
+                        coluna
                 ).isRevelada()
                         && !tabuleiro.getCelula(
-                                linha, coluna
+                                linha,
+                                coluna
                         ).isMinada()) {
 
                     reveladas++;
@@ -694,10 +859,12 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
                 .getDificuldade()
                 .getMultiplicador();
 
-        int base = reveladas * 10
-                + tabuleiro.getMinasEncontradas() * 20;
+        int base =
+                reveladas * 10
+                        + tabuleiro.getMinasEncontradas() * 20;
 
-        int bonusVidas = tabuleiro.getVidas() * 50;
+        int bonusVidas =
+                tabuleiro.getVidas() * 50;
 
         return Math.max(
                 0,
@@ -717,9 +884,14 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
 
         pararAutojogo();
         cronometro.stop();
+
         atualizarInformacoes();
 
-        if (tabuleiro.isVenceu()) {
+        boolean venceu = tabuleiro.isVenceu();
+
+        String mensagem;
+
+        if (venceu) {
 
             int pontos = calcularPontuacao();
 
@@ -737,42 +909,129 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
                         )
                 );
 
-                JOptionPane.showMessageDialog(
-                        this,
-                        "✿ Vitória! ✿\n"
+                mensagem =
+                        "✿ Vitória! ✿\n\n"
                                 + "Jogador: " + nomeJogador
                                 + "\nPontuação: " + pontos
                                 + "\nTempo: " + segundos + "s"
-                                + "\nRanking atualizado.",
-                        "Campo Minado Sakura",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
+                                + "\nRanking atualizado.";
 
             } catch (IllegalStateException e) {
 
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Vitória!\n"
-                                + "Não foi possível salvar "
-                                + "o ranking:\n"
-                                + e.getMessage(),
-                        "Aviso",
-                        JOptionPane.WARNING_MESSAGE
-                );
+                mensagem =
+                        "✿ Vitória! ✿\n\n"
+                                + "Pontuação: " + pontos
+                                + "\nTempo: " + segundos + "s"
+                                + "\n\nNão foi possível salvar o ranking:\n"
+                                + e.getMessage();
             }
 
         } else {
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Fim de jogo!\n"
-                            + "Pontuação: "
-                            + calcularPontuacao()
-                            + "\nTempo: " + segundos + "s",
-                    "Derrota",
-                    JOptionPane.INFORMATION_MESSAGE
+            mensagem =
+                    "Fim de jogo!\n\n"
+                            + "Pontuação: " + calcularPontuacao()
+                            + "\nTempo: " + segundos + "s";
+        }
+
+        mostrarOpcoesFimPartida(
+                mensagem,
+                venceu
+        );
+    }
+
+    private void mostrarOpcoesFimPartida(
+            String mensagem,
+            boolean venceu
+    ) {
+
+        Object[] opcoes = {
+                "Jogar novamente",
+                "Mudar dificuldade",
+                "Voltar ao menu"
+        };
+
+        int escolha = JOptionPane.showOptionDialog(
+                this,
+                mensagem,
+                venceu ? "Vitória Sakura" : "Fim de jogo",
+                JOptionPane.DEFAULT_OPTION,
+                venceu
+                        ? JOptionPane.INFORMATION_MESSAGE
+                        : JOptionPane.WARNING_MESSAGE,
+                null,
+                opcoes,
+                opcoes[0]
+        );
+
+        switch (escolha) {
+
+            case 0 -> iniciarNovaPartida();
+
+            case 1 -> escolherDificuldadeFimPartida();
+
+            case 2 -> voltarAoMenuInicial();
+
+            default -> {
+                // Mantém o tabuleiro finalizado visível.
+            }
+        }
+    }
+
+    private void escolherDificuldadeFimPartida() {
+
+        JComboBox<Dificuldade> seletor =
+                new JComboBox<>(new Dificuldade[]{
+                        Dificuldade.FACIL,
+                        Dificuldade.MEDIO,
+                        Dificuldade.DIFICIL,
+                        Dificuldade.INFERNO
+                });
+
+        seletor.setSelectedItem(dificuldadeAtual);
+
+        TemaSakura.estilizarSeletor(seletor);
+
+        int resposta = JOptionPane.showConfirmDialog(
+                this,
+                seletor,
+                "Escolha a dificuldade da próxima partida",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (resposta == JOptionPane.OK_OPTION) {
+
+            Dificuldade nova =
+                    (Dificuldade) seletor.getSelectedItem();
+
+            if (nova != null) {
+                dificuldadeAtual = nova;
+                iniciarNovaPartida();
+            }
+
+        } else {
+
+            mostrarOpcoesFimPartida(
+                    "A partida foi finalizada.\n"
+                            + "Escolha como deseja continuar.",
+                    tabuleiro.isVenceu()
             );
         }
+    }
+
+    private void voltarAoMenuInicial() {
+
+        pararAutojogo();
+        cronometro.stop();
+
+        SwingUtilities.invokeLater(() -> {
+
+            TelaInicial inicial = new TelaInicial();
+            inicial.setVisible(true);
+
+            dispose();
+        });
     }
 
     private void alterarJogador() {
@@ -784,7 +1043,12 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         );
 
         if (nome != null && !nome.isBlank()) {
+
             nomeJogador = nome.trim();
+
+            setTitle(
+                    "Campo Minado Sakura - " + nomeJogador
+            );
         }
     }
 
@@ -793,6 +1057,7 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         List<RegistroPartida> registros;
 
         try {
+
             registros = rankingService.listar();
 
         } catch (IllegalStateException e) {
@@ -848,7 +1113,11 @@ public void selecionarDificuldade(Dificuldade dificuldade) {
         area.setEditable(false);
 
         area.setFont(
-                new Font("Monospaced", Font.PLAIN, 13)
+                new Font(
+                        "Monospaced",
+                        Font.PLAIN,
+                        13
+                )
         );
 
         area.setBackground(TemaSakura.BRANCO);
