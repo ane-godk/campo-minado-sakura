@@ -1,0 +1,6 @@
+br\com\sakura\campominado\solver\TestadorPartidaTest.class
+br\com\sakura\AppTest.class
+br\com\sakura\campominado\domain\CelulaTest.class
+br\com\sakura\campominado\domain\TabuleiroRegrasTest.class
+br\com\sakura\campominado\domain\TabuleiroTest.class
+br\com\sakura\campominado\solver\SolverTest.class

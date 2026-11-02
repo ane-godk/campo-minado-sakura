@@ -4,7 +4,6 @@ package br.com.sakura.campominado.ui;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 
 public class TelaPausa extends JDialog {
 

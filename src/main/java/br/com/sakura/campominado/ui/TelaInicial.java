@@ -23,9 +23,6 @@ public class TelaInicial extends JFrame {
     private static final Color ROSA_MEDIO =
             new Color(220, 116, 156);
 
-    private static final Color ROSA_BOTAO =
-            new Color(247, 181, 207);
-
     private final JPanel painelConteudo =
             new JPanel();
 
@@ -34,6 +31,8 @@ public class TelaInicial extends JFrame {
 
     private Dificuldade dificuldadeSelecionada =
             Dificuldade.FACIL;
+
+    private JLabel titulo;
 
     public TelaInicial() {
         setTitle("Campo Minado Sakura");
@@ -99,11 +98,7 @@ public class TelaInicial extends JFrame {
         );
 
         florSuperior.setFont(
-                new Font(
-                        "Serif",
-                        Font.PLAIN,
-                        34
-                )
+                new Font("Serif", Font.PLAIN, 34)
         );
 
         florSuperior.setForeground(
@@ -114,7 +109,7 @@ public class TelaInicial extends JFrame {
                 Component.CENTER_ALIGNMENT
         );
 
-        JLabel titulo = new JLabel(
+        titulo = new JLabel(
                 "<html>"
                         + "<div style='text-align:center'>"
                         + "Campo<br>Minado"
@@ -124,11 +119,7 @@ public class TelaInicial extends JFrame {
         );
 
         titulo.setFont(
-                new Font(
-                        "Serif",
-                        Font.BOLD,
-                        72
-                )
+                FontesSakura.titulo(76f)
         );
 
         titulo.setForeground(
@@ -145,11 +136,7 @@ public class TelaInicial extends JFrame {
         );
 
         subtitulo.setFont(
-                new Font(
-                        "SansSerif",
-                        Font.BOLD,
-                        19
-                )
+                FontesSakura.texto(20f)
         );
 
         subtitulo.setForeground(
@@ -261,22 +248,22 @@ public class TelaInicial extends JFrame {
         );
 
         JButton jogar = criarBotao(
-                "▶  Jogar",
+                "Jogar",
                 true
         );
 
         JButton dificuldade = criarBotao(
-                "⚙  Dificuldade",
+                "Dificuldade",
                 false
         );
 
         JButton ranking = criarBotao(
-                "★  Ranking",
+                "Ranking",
                 false
         );
 
         JButton comoJogar = criarBotao(
-                "?  Como Jogar",
+                "Como Jogar",
                 false
         );
 
@@ -324,66 +311,27 @@ public class TelaInicial extends JFrame {
             boolean destaque
     ) {
         JButton botao =
-                new JButton(texto);
+                TemaSakura.criarBotao(texto);
 
         botao.setAlignmentX(
                 Component.CENTER_ALIGNMENT
         );
 
         botao.setFont(
-                new Font(
-                        "SansSerif",
-                        Font.BOLD,
-                        destaque ? 24 : 20
+                FontesSakura.botao(
+                        destaque ? 25f : 21f
                 )
         );
 
-        botao.setForeground(
-                destaque
-                        ? Color.WHITE
-                        : ROSA_ESCURO
-        );
+        int altura =
+                destaque ? 72 : 60;
 
-        botao.setBackground(
-                destaque
-                        ? ROSA_MEDIO
-                        : ROSA_BOTAO
-        );
+        Dimension tamanho =
+                new Dimension(420, altura);
 
-        botao.setFocusPainted(false);
-
-        botao.setCursor(
-                Cursor.getPredefinedCursor(
-                        Cursor.HAND_CURSOR
-                )
-        );
-
-        botao.setMaximumSize(
-                new Dimension(
-                        420,
-                        destaque ? 72 : 60
-                )
-        );
-
-        botao.setPreferredSize(
-                new Dimension(
-                        420,
-                        destaque ? 72 : 60
-                )
-        );
-
-        botao.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                ROSA_ESCURO,
-                                2,
-                                true
-                        ),
-                        new EmptyBorder(
-                                10, 24, 10, 24
-                        )
-                )
-        );
+        botao.setPreferredSize(tamanho);
+        botao.setMinimumSize(tamanho);
+        botao.setMaximumSize(tamanho);
 
         return botao;
     }
@@ -458,6 +406,12 @@ public class TelaInicial extends JFrame {
         if (largura <= 0 || altura <= 0) {
             return;
         }
+
+        titulo.setFont(
+                FontesSakura.titulo(
+                        largura < 500 ? 57f : 76f
+                )
+        );
 
         int larguraConteudo = Math.min(
                 540,

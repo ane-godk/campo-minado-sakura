@@ -62,10 +62,11 @@ public final class TemaSakura {
         label.setFont(FONTE);
     }
 
-    public static JButton criarBotao(String texto) {
-
-        return new BotaoSakura(texto);
-    }
+public static JButton criarBotao(String texto) {
+    JButton botao = new BotaoSakura(texto);
+    botao.setFont(FontesSakura.botao(15f));
+    return botao;
+}
 
     public static void estilizarBotao(JButton botao) {
 
