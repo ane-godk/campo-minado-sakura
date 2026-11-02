@@ -34,6 +34,14 @@ public class TelaPrincipal extends JFrame {
     private final JLabel labelPontos = new JLabel();
     private final JLabel labelDificuldade = new JLabel();
 
+    private final JLabel labelOrientacao =
+            new JLabel(
+                    "Use uma dica para encontrar uma jogada segura."
+            );
+
+    private final JLabel labelAutosolve =
+            new JLabel("", SwingConstants.CENTER);
+
     private final JButton botaoDica =
             TemaSakura.criarBotao("Dica (3/3)");
 
@@ -55,12 +63,10 @@ public class TelaPrincipal extends JFrame {
     private boolean partidaIniciada;
     private boolean resultadoProcessado;
     private boolean pausado;
-    private boolean autosolveAtivo;
 
     private String nomeJogador = "Jogador";
 
     public TelaPrincipal() {
-
         setTitle("Campo Minado - Sakura");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -69,7 +75,6 @@ public class TelaPrincipal extends JFrame {
         );
 
         principal.setBackground(TemaSakura.FUNDO);
-
         principal.setBorder(
                 new EmptyBorder(10, 10, 10, 10)
         );
@@ -126,17 +131,19 @@ public class TelaPrincipal extends JFrame {
 
         setContentPane(principal);
 
-        cronometro = new Timer(1000, evento -> {
+        cronometro = new Timer(
+                1000,
+                evento -> {
+                    if (!pausado
+                            && !resultadoProcessado
+                            && tabuleiro != null
+                            && !tabuleiro.isJogoEncerrado()) {
 
-            if (!pausado
-                    && !resultadoProcessado
-                    && tabuleiro != null
-                    && !tabuleiro.isJogoEncerrado()) {
-
-                segundos++;
-                atualizarInformacoes();
-            }
-        });
+                        segundos++;
+                        atualizarInformacoes();
+                    }
+                }
+        );
 
         iniciarNovaPartida();
     }
@@ -144,7 +151,6 @@ public class TelaPrincipal extends JFrame {
     public void selecionarDificuldade(
             Dificuldade dificuldade
     ) {
-
         if (dificuldade == null) {
             return;
         }
@@ -154,7 +160,6 @@ public class TelaPrincipal extends JFrame {
     }
 
     private JPanel criarCabecalho() {
-
         JPanel cabecalho = new JPanel(
                 new BorderLayout(0, 10)
         );
@@ -177,12 +182,51 @@ public class TelaPrincipal extends JFrame {
                 SwingConstants.CENTER
         );
 
-        titulo.setFont(
-                new Font("SansSerif", Font.BOLD, 20)
-        );
+        titulo.setFont(new Font(
+                "SansSerif",
+                Font.BOLD,
+                20
+        ));
 
         titulo.setForeground(
                 TemaSakura.ROSA_ESCURO
+        );
+
+        labelAutosolve.setFont(new Font(
+                "SansSerif",
+                Font.BOLD,
+                12
+        ));
+
+        labelAutosolve.setForeground(
+                TemaSakura.ROSA_ESCURO
+        );
+
+        labelAutosolve.setOpaque(true);
+        labelAutosolve.setBackground(
+                TemaSakura.ROSA_CLARO
+        );
+
+        labelAutosolve.setBorder(
+                new EmptyBorder(5, 12, 5, 12)
+        );
+
+        labelAutosolve.setVisible(false);
+
+        JPanel areaTitulo = new JPanel(
+                new BorderLayout(0, 5)
+        );
+
+        areaTitulo.setOpaque(false);
+
+        areaTitulo.add(
+                titulo,
+                BorderLayout.NORTH
+        );
+
+        areaTitulo.add(
+                labelAutosolve,
+                BorderLayout.SOUTH
         );
 
         JPanel linhaSuperior = new JPanel(
@@ -191,9 +235,11 @@ public class TelaPrincipal extends JFrame {
 
         linhaSuperior.setOpaque(false);
 
-        labelDificuldade.setFont(
-                new Font("SansSerif", Font.BOLD, 12)
-        );
+        labelDificuldade.setFont(new Font(
+                "SansSerif",
+                Font.BOLD,
+                12
+        ));
 
         labelDificuldade.setForeground(
                 TemaSakura.ROSA_ESCURO
@@ -230,23 +276,23 @@ public class TelaPrincipal extends JFrame {
         informacoes.add(criarCartao(labelPontos));
 
         JPanel linhaDica = new JPanel(
-                new BorderLayout()
+                new BorderLayout(8, 0)
         );
 
         linhaDica.setOpaque(false);
 
-        JLabel explicacao = new JLabel(
-                "Use uma dica para encontrar uma jogada segura."
-        );
+        labelOrientacao.setFont(new Font(
+                "SansSerif",
+                Font.PLAIN,
+                12
+        ));
 
-        explicacao.setFont(
-                new Font("SansSerif", Font.PLAIN, 12)
+        labelOrientacao.setForeground(
+                TemaSakura.TEXTO
         );
-
-        explicacao.setForeground(TemaSakura.TEXTO);
 
         linhaDica.add(
-                explicacao,
+                labelOrientacao,
                 BorderLayout.CENTER
         );
 
@@ -281,7 +327,7 @@ public class TelaPrincipal extends JFrame {
         );
 
         cabecalho.add(
-                titulo,
+                areaTitulo,
                 BorderLayout.NORTH
         );
 
@@ -301,23 +347,27 @@ public class TelaPrincipal extends JFrame {
         return cabecalho;
     }
 
-    private void configurarIndicador(JLabel label) {
-
+    private void configurarIndicador(
+            JLabel label
+    ) {
         label.setHorizontalAlignment(
                 SwingConstants.CENTER
         );
 
-        label.setFont(
-                new Font("SansSerif", Font.BOLD, 12)
-        );
+        label.setFont(new Font(
+                "SansSerif",
+                Font.BOLD,
+                12
+        ));
 
         label.setForeground(
                 TemaSakura.ROSA_ESCURO
         );
     }
 
-    private JPanel criarCartao(JLabel label) {
-
+    private JPanel criarCartao(
+            JLabel label
+    ) {
         JPanel cartao = new JPanel(
                 new BorderLayout()
         );
@@ -344,11 +394,14 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void iniciarNovaPartida() {
-
         pararAutojogo();
 
         if (cronometro != null) {
             cronometro.stop();
+        }
+
+        if (painelTabuleiro != null) {
+            painelTabuleiro.encerrarAnimacoes();
         }
 
         segundos = 0;
@@ -357,7 +410,10 @@ public class TelaPrincipal extends JFrame {
         partidaIniciada = false;
         resultadoProcessado = false;
         pausado = false;
-        autosolveAtivo = false;
+
+        labelOrientacao.setText(
+                "Use uma dica para encontrar uma jogada segura."
+        );
 
         ConfiguracaoJogo configuracao =
                 new ConfiguracaoJogo(
@@ -371,12 +427,13 @@ public class TelaPrincipal extends JFrame {
                 );
 
         tabuleiro = new Tabuleiro(configuracao);
+
         testador = new TestadorPartida(tabuleiro);
         solver = new Solver(tabuleiro);
 
         painelTabuleiro = new PainelTabuleiro(
                 tabuleiro,
-                this::atualizarInformacoes,
+                this::atualizarAposJogadaManual,
                 this::iniciarCronometro,
                 this::encerrarPartida
         );
@@ -390,12 +447,21 @@ public class TelaPrincipal extends JFrame {
 
         SwingUtilities.invokeLater(() ->
                 rolagemTabuleiro.getViewport()
-                        .setViewPosition(new Point(0, 0))
+                        .setViewPosition(
+                                new Point(0, 0)
+                        )
         );
     }
 
-    private void ajustarTamanhoJanela() {
+    private void atualizarAposJogadaManual() {
+        labelOrientacao.setText(
+                "Use uma dica para encontrar uma jogada segura."
+        );
 
+        atualizarInformacoes();
+    }
+
+    private void ajustarTamanhoJanela() {
         Rectangle areaUtil = GraphicsEnvironment
                 .getLocalGraphicsEnvironment()
                 .getMaximumWindowBounds();
@@ -465,7 +531,10 @@ public class TelaPrincipal extends JFrame {
 
         int alturaDesejada = Math.max(
                 tamanhoGrade.height,
-                Math.min(larguraDesejada, alturaUtil)
+                Math.min(
+                        larguraDesejada,
+                        alturaUtil
+                )
         );
 
         int larguraViewport = Math.min(
@@ -499,7 +568,6 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void iniciarCronometro() {
-
         if (pausado
                 || resultadoProcessado
                 || tabuleiro.isJogoEncerrado()) {
@@ -514,7 +582,6 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void solicitarDica() {
-
         if (pausado
                 || resultadoProcessado
                 || tabuleiro.isJogoEncerrado()
@@ -523,14 +590,12 @@ public class TelaPrincipal extends JFrame {
         }
 
         if (dicasRestantes <= 0) {
-
             JOptionPane.showMessageDialog(
                     this,
                     "Você já utilizou as três dicas desta partida.",
                     "Dicas esgotadas",
                     JOptionPane.INFORMATION_MESSAGE
             );
-
             return;
         }
 
@@ -538,7 +603,6 @@ public class TelaPrincipal extends JFrame {
                 solver.encontrarJogada();
 
         if (jogada == null) {
-
             JOptionPane.showMessageDialog(
                     this,
                     "Ainda não existe uma dedução lógica segura.\n"
@@ -547,36 +611,50 @@ public class TelaPrincipal extends JFrame {
                     "Dica Sakura",
                     JOptionPane.INFORMATION_MESSAGE
             );
-
             return;
         }
 
+        boolean marcarMina =
+                jogada.tipo()
+                        != Solver.TipoJogada.REVELAR;
+
         dicasRestantes--;
+
+        painelTabuleiro.destacarDica(
+                jogada.linha(),
+                jogada.coluna(),
+                marcarMina
+        );
+
+        String acao = marcarMina
+                ? "Marque a célula destacada como mina."
+                : "Revele a célula destacada.";
+
+        labelOrientacao.setText(
+                acao + " (" + (jogada.linha() + 1)
+                        + ", " + (jogada.coluna() + 1)
+                        + ")"
+        );
+
         atualizarInformacoes();
 
-        String acao =
-                jogada.tipo() == Solver.TipoJogada.REVELAR
-                        ? "Revelar"
-                        : "Marcar como mina";
+        Rectangle destino =
+                painelTabuleiro.getLimitesCelula(
+                        jogada.linha(),
+                        jogada.coluna()
+                );
 
-        JOptionPane.showMessageDialog(
-                this,
-                acao
-                        + " a célula da linha "
-                        + (jogada.linha() + 1)
-                        + ", coluna "
-                        + (jogada.coluna() + 1)
-                        + ".\n\n"
-                        + jogada.explicacao()
-                        + "\n\nDicas restantes: "
-                        + dicasRestantes,
-                "Dica Sakura",
-                JOptionPane.INFORMATION_MESSAGE
-        );
+        SwingUtilities.invokeLater(() -> {
+            if (painelTabuleiro != null
+                    && painelTabuleiro.isDisplayable()) {
+                painelTabuleiro.scrollRectToVisible(
+                        destino
+                );
+            }
+        });
     }
 
     private void abrirMenuPausa() {
-
         if (resultadoProcessado
                 || tabuleiro.isJogoEncerrado()) {
             return;
@@ -591,11 +669,11 @@ public class TelaPrincipal extends JFrame {
 
         pausado = true;
         cronometro.stop();
+        atualizarInformacoes();
 
         boolean menuAberto = true;
 
         while (menuAberto) {
-
             TelaPausa telaPausa = new TelaPausa(
                     this,
                     nomeJogador,
@@ -608,9 +686,7 @@ public class TelaPrincipal extends JFrame {
                     telaPausa.mostrar();
 
             switch (acao) {
-
                 case CONTINUAR -> {
-
                     menuAberto = false;
                     retomarPartida();
 
@@ -620,11 +696,13 @@ public class TelaPrincipal extends JFrame {
                 }
 
                 case AUTOSOLVE -> {
-
                     menuAberto = false;
 
                     if (autosolveEstavaAtivo) {
                         pararAutojogo();
+                        labelOrientacao.setText(
+                                "Autosolve interrompido pelo jogador."
+                        );
                         retomarPartida();
                     } else {
                         iniciarAutojogo();
@@ -638,7 +716,6 @@ public class TelaPrincipal extends JFrame {
                         mostrarRanking();
 
                 case REINICIAR -> {
-
                     int confirmar =
                             JOptionPane.showConfirmDialog(
                                     this,
@@ -649,14 +726,14 @@ public class TelaPrincipal extends JFrame {
                                     JOptionPane.WARNING_MESSAGE
                             );
 
-                    if (confirmar == JOptionPane.YES_OPTION) {
+                    if (confirmar
+                            == JOptionPane.YES_OPTION) {
                         menuAberto = false;
                         iniciarNovaPartida();
                     }
                 }
 
                 case VOLTAR_MENU -> {
-
                     int confirmar =
                             JOptionPane.showConfirmDialog(
                                     this,
@@ -667,17 +744,19 @@ public class TelaPrincipal extends JFrame {
                                     JOptionPane.WARNING_MESSAGE
                             );
 
-                    if (confirmar == JOptionPane.YES_OPTION) {
+                    if (confirmar
+                            == JOptionPane.YES_OPTION) {
                         menuAberto = false;
                         voltarAoMenuInicial();
                     }
                 }
             }
         }
+
+        atualizarInformacoes();
     }
 
     private void retomarPartida() {
-
         pausado = false;
 
         if (partidaIniciada
@@ -685,10 +764,11 @@ public class TelaPrincipal extends JFrame {
                 && !tabuleiro.isJogoEncerrado()) {
             cronometro.start();
         }
+
+        atualizarInformacoes();
     }
 
     private void iniciarAutojogo() {
-
         if (resultadoProcessado
                 || tabuleiro.isJogoEncerrado()) {
             return;
@@ -696,66 +776,87 @@ public class TelaPrincipal extends JFrame {
 
         pararAutojogo();
 
-        pausado = false;
-        autosolveAtivo = true;
+        painelTabuleiro.limparDica();
 
+        labelOrientacao.setText(
+                "Autosolve em andamento..."
+        );
+
+        pausado = false;
         iniciarCronometro();
 
-        timerAutojogo = new Timer(60, evento -> {
+        timerAutojogo = new Timer(
+                60,
+                evento -> {
+                    if (pausado || resultadoProcessado) {
+                        pararAutojogo();
+                        return;
+                    }
 
-            if (pausado || resultadoProcessado) {
-                pararAutojogo();
-                return;
-            }
+                    if (!tabuleiro.isJogoEncerrado()) {
+                        boolean executou =
+                                testador.executarProximoPasso();
 
-            if (!tabuleiro.isJogoEncerrado()) {
+                        if (!executou) {
+                            pararAutojogo();
 
-                boolean executou =
-                        testador.executarProximoPasso();
+                            labelOrientacao.setText(
+                                    "Autosolve interrompido."
+                            );
 
-                if (!executou) {
+                            atualizarInformacoes();
 
-                    pararAutojogo();
+                            JOptionPane.showMessageDialog(
+                                    this,
+                                    "O Autosolve não encontrou mais jogadas.",
+                                    "Autosolve interrompido",
+                                    JOptionPane.WARNING_MESSAGE
+                            );
 
-                    JOptionPane.showMessageDialog(
-                            this,
-                            "O Autosolve não encontrou mais jogadas.",
-                            "Autosolve interrompido",
-                            JOptionPane.WARNING_MESSAGE
-                    );
+                            return;
+                        }
+                    }
 
-                    return;
+                    atualizarAposJogadaAutomatica();
+
+                    if (tabuleiro.isJogoEncerrado()) {
+                        pararAutojogo();
+                        atualizarInformacoes();
+                    }
                 }
-            }
-
-            atualizarAposJogadaAutomatica();
-
-            if (tabuleiro.isJogoEncerrado()) {
-                pararAutojogo();
-            }
-        });
+        );
 
         timerAutojogo.start();
+        atualizarInformacoes();
     }
 
     private boolean autojogoEmAndamento() {
-
         return timerAutojogo != null
                 && timerAutojogo.isRunning();
     }
 
     private void pararAutojogo() {
-
         if (timerAutojogo != null) {
             timerAutojogo.stop();
             timerAutojogo = null;
         }
 
-        autosolveAtivo = false;
+        atualizarIndicadorAutosolve();
+    }
+
+    private void atualizarIndicadorAutosolve() {
+        boolean ativo = autojogoEmAndamento();
+
+        labelAutosolve.setText(
+                ativo ? "✿ AUTOSOLVE ATIVO ✿" : ""
+        );
+
+        labelAutosolve.setVisible(ativo);
+        labelAutosolve.getParent().revalidate();
+        labelAutosolve.getParent().repaint();
     }
 
     private void atualizarAposJogadaAutomatica() {
-
         painelTabuleiro.atualizarTabuleiro();
         atualizarInformacoes();
 
@@ -765,7 +866,6 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void atualizarInformacoes() {
-
         if (tabuleiro == null) {
             return;
         }
@@ -787,7 +887,8 @@ public class TelaPrincipal extends JFrame {
         );
 
         labelDificuldade.setText(
-                "Dificuldade: " + dificuldadeAtual.getNome()
+                "Dificuldade: "
+                        + dificuldadeAtual.getNome()
         );
 
         botaoDica.setText(
@@ -807,8 +908,8 @@ public class TelaPrincipal extends JFrame {
                         && !tabuleiro.isJogoEncerrado()
         );
 
-        // Detecta o fim mesmo quando o tabuleiro
-        // apenas notifica uma atualização visual.
+        atualizarIndicadorAutosolve();
+
         if (tabuleiro.isJogoEncerrado()
                 && !resultadoProcessado) {
             encerrarPartida();
@@ -816,7 +917,6 @@ public class TelaPrincipal extends JFrame {
     }
 
     private int calcularPontuacao() {
-
         if (tabuleiro == null) {
             return 0;
         }
@@ -863,23 +963,31 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void encerrarPartida() {
-
         if (resultadoProcessado
                 || tabuleiro == null
                 || !tabuleiro.isJogoEncerrado()) {
             return;
         }
 
-        // Impede abertura duplicada da janela.
         resultadoProcessado = true;
 
         pararAutojogo();
         cronometro.stop();
 
-        final boolean venceu = tabuleiro.isVenceu();
-        final int pontos = calcularPontuacao();
-        final int tempoFinal = segundos;
-        final String jogadorFinal = nomeJogador;
+        painelTabuleiro.encerrarAnimacoes();
+
+        final boolean venceu =
+                tabuleiro.isVenceu();
+
+        final int pontos =
+                calcularPontuacao();
+
+        final int tempoFinal =
+                segundos;
+
+        final String jogadorFinal =
+                nomeJogador;
+
         final Dificuldade dificuldadeFinal =
                 dificuldadeAtual;
 
@@ -887,7 +995,6 @@ public class TelaPrincipal extends JFrame {
 
         if (venceu) {
             try {
-
                 rankingService.salvar(
                         new RegistroPartida(
                                 jogadorFinal,
@@ -901,7 +1008,6 @@ public class TelaPrincipal extends JFrame {
                 salvouRanking = true;
 
             } catch (IllegalStateException e) {
-
                 JOptionPane.showMessageDialog(
                         this,
                         "Não foi possível salvar o ranking:\n"
@@ -912,34 +1018,32 @@ public class TelaPrincipal extends JFrame {
             }
         }
 
-        final boolean rankingSalvo = salvouRanking;
+        final boolean rankingSalvo =
+                salvouRanking;
 
         botaoPausar.setEnabled(false);
         botaoDica.setEnabled(false);
 
-        // Abre depois que a jogada atual terminar
-        // de ser processada pelo Swing.
         SwingUtilities.invokeLater(() -> {
-
             if (!isDisplayable()) {
                 return;
             }
 
-            TelaFimPartida telaFim = new TelaFimPartida(
-                    this,
-                    venceu,
-                    jogadorFinal,
-                    dificuldadeFinal,
-                    tempoFinal,
-                    pontos,
-                    rankingSalvo
-            );
+            TelaFimPartida telaFim =
+                    new TelaFimPartida(
+                            this,
+                            venceu,
+                            jogadorFinal,
+                            dificuldadeFinal,
+                            tempoFinal,
+                            pontos,
+                            rankingSalvo
+                    );
 
             TelaFimPartida.Acao acao =
                     telaFim.mostrar();
 
             switch (acao) {
-
                 case JOGAR_NOVAMENTE ->
                         iniciarNovaPartida();
 
@@ -960,121 +1064,71 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void voltarAoMenuInicial() {
-
         pararAutojogo();
         cronometro.stop();
 
+        if (painelTabuleiro != null) {
+            painelTabuleiro.encerrarAnimacoes();
+        }
+
         SwingUtilities.invokeLater(() -> {
+            TelaInicial inicial =
+                    new TelaInicial();
 
-            TelaInicial inicial = new TelaInicial();
             inicial.setVisible(true);
-
             dispose();
         });
     }
 
     private void alterarJogador() {
+        TelaAlterarJogador tela =
+                new TelaAlterarJogador(
+                        this,
+                        nomeJogador
+                );
 
-        String nome = JOptionPane.showInputDialog(
-                this,
-                "Nome do jogador:",
-                nomeJogador
-        );
+        String nome = tela.mostrar();
 
-        if (nome != null && !nome.isBlank()) {
-
-            nomeJogador = nome.trim();
+        if (nome != null) {
+            nomeJogador = nome;
 
             setTitle(
-                    "Campo Minado Sakura - " + nomeJogador
+                    "Campo Minado Sakura - "
+                            + nomeJogador
             );
         }
     }
 
     private void mostrarRanking() {
-
         List<RegistroPartida> registros;
 
         try {
-
             registros = rankingService.listar();
 
         } catch (IllegalStateException e) {
-
             JOptionPane.showMessageDialog(
                     this,
                     e.getMessage(),
                     "Erro no ranking",
                     JOptionPane.ERROR_MESSAGE
             );
-
             return;
         }
 
-        if (registros.isEmpty()) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Nenhuma vitória registrada.",
-                    "Ranking",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            return;
-        }
-
-        StringBuilder texto = new StringBuilder();
-
-        for (int i = 0;
-             i < Math.min(10, registros.size());
-             i++) {
-
-            RegistroPartida registro =
-                    registros.get(i);
-
-            texto.append(i + 1)
-                    .append(". ")
-                    .append(registro.jogador())
-                    .append(" | ")
-                    .append(registro.dificuldade())
-                    .append(" | ")
-                    .append(registro.pontuacao())
-                    .append(" pontos | ")
-                    .append(registro.tempoSegundos())
-                    .append("s\n");
-        }
-
-        JTextArea area = new JTextArea(
-                texto.toString(),
-                12,
-                40
-        );
-
-        area.setEditable(false);
-
-        area.setFont(
-                new Font(
-                        "Monospaced",
-                        Font.PLAIN,
-                        13
-                )
-        );
-
-        area.setBackground(TemaSakura.BRANCO);
-        area.setForeground(TemaSakura.TEXTO);
-
-        JOptionPane.showMessageDialog(
+        TelaRanking tela = new TelaRanking(
                 this,
-                new JScrollPane(area),
-                "✿ Top 10 - Ranking Sakura ✿",
-                JOptionPane.INFORMATION_MESSAGE
+                registros
         );
+
+        tela.mostrar();
     }
 
-    public static void main(String[] args) {
-
+    public static void main(
+            String[] args
+    ) {
         SwingUtilities.invokeLater(
-                () -> new TelaPrincipal().setVisible(true)
+                () -> new TelaPrincipal()
+                        .setVisible(true)
         );
     }
 }
