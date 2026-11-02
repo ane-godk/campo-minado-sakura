@@ -25,6 +25,9 @@ public class TelaPrincipal extends JFrame {
     private final JPanel areaTabuleiro =
             new JPanel(new BorderLayout());
 
+    private final JScrollPane rolagemTabuleiro =
+            new JScrollPane();
+
     private final JLabel labelVidas = new JLabel();
     private final JLabel labelMinas = new JLabel();
     private final JLabel labelTempo = new JLabel();
@@ -53,30 +56,63 @@ public class TelaPrincipal extends JFrame {
 
         setTitle("Campo Minado - Sakura");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setMinimumSize(new Dimension(680, 600));
 
         JPanel principal = new JPanel(
-                new BorderLayout(12, 12)
+                new BorderLayout(8, 8)
         );
+
         principal.setBackground(TemaSakura.FUNDO);
         principal.setBorder(
-                new EmptyBorder(16, 16, 16, 16)
+                new EmptyBorder(10, 10, 10, 10)
         );
 
         JPanel cabecalho = criarCabecalho();
 
         areaTabuleiro.setBackground(TemaSakura.PAINEL);
+
         areaTabuleiro.setBorder(
                 BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(
                                 TemaSakura.BORDA, 2, true
                         ),
-                        new EmptyBorder(8, 8, 8, 8)
+                        new EmptyBorder(5, 5, 5, 5)
                 )
         );
 
-        principal.add(cabecalho, BorderLayout.NORTH);
-        principal.add(areaTabuleiro, BorderLayout.CENTER);
+        rolagemTabuleiro.setBorder(null);
+
+        rolagemTabuleiro.getViewport().setBackground(
+                TemaSakura.PAINEL
+        );
+
+        rolagemTabuleiro.setHorizontalScrollBarPolicy(
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+        );
+
+        rolagemTabuleiro.setVerticalScrollBarPolicy(
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+        );
+
+        rolagemTabuleiro.getVerticalScrollBar()
+                .setUnitIncrement(32);
+
+        rolagemTabuleiro.getHorizontalScrollBar()
+                .setUnitIncrement(32);
+
+        areaTabuleiro.add(
+                rolagemTabuleiro,
+                BorderLayout.CENTER
+        );
+
+        principal.add(
+                cabecalho,
+                BorderLayout.NORTH
+        );
+
+        principal.add(
+                areaTabuleiro,
+                BorderLayout.CENTER
+        );
 
         setContentPane(principal);
 
@@ -91,16 +127,17 @@ public class TelaPrincipal extends JFrame {
     private JPanel criarCabecalho() {
 
         JPanel cabecalho = new JPanel(
-                new BorderLayout(0, 12)
+                new BorderLayout(0, 10)
         );
 
         cabecalho.setBackground(TemaSakura.PAINEL);
+
         cabecalho.setBorder(
                 BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(
                                 TemaSakura.BORDA, 2, true
                         ),
-                        new EmptyBorder(14, 14, 14, 14)
+                        new EmptyBorder(10, 10, 10, 10)
                 )
         );
 
@@ -108,22 +145,25 @@ public class TelaPrincipal extends JFrame {
                 "✿ CAMPO MINADO SAKURA ✿",
                 SwingConstants.CENTER
         );
+
         titulo.setFont(
-                new Font("SansSerif", Font.BOLD, 23)
+                new Font("SansSerif", Font.BOLD, 22)
         );
+
         titulo.setForeground(TemaSakura.ROSA_ESCURO);
 
         JPanel controles = new JPanel(
-                new GridLayout(3, 3, 8, 8)
+                new GridLayout(3, 3, 6, 6)
         );
+
         controles.setOpaque(false);
 
         JLabel dificuldade = new JLabel(
                 "Dificuldade:",
                 SwingConstants.CENTER
         );
-        TemaSakura.estilizarTexto(dificuldade);
 
+        TemaSakura.estilizarTexto(dificuldade);
         TemaSakura.estilizarSeletor(seletorDificuldade);
 
         JButton reiniciar =
@@ -150,16 +190,19 @@ public class TelaPrincipal extends JFrame {
         controles.add(dificuldade);
         controles.add(seletorDificuldade);
         controles.add(reiniciar);
+
         controles.add(jogador);
         controles.add(ranking);
         controles.add(passo);
+
         controles.add(autojogar);
         controles.add(dica);
         controles.add(passoLogico);
 
         JPanel informacoes = new JPanel(
-                new GridLayout(1, 4, 8, 0)
+                new GridLayout(1, 4, 6, 0)
         );
+
         informacoes.setOpaque(false);
 
         configurarIndicador(labelVidas);
@@ -173,8 +216,9 @@ public class TelaPrincipal extends JFrame {
         informacoes.add(criarCartao(labelPontos));
 
         JPanel centro = new JPanel(
-                new BorderLayout(0, 12)
+                new BorderLayout(0, 10)
         );
+
         centro.setOpaque(false);
         centro.add(controles, BorderLayout.CENTER);
         centro.add(informacoes, BorderLayout.SOUTH);
@@ -218,10 +262,15 @@ public class TelaPrincipal extends JFrame {
     }
 
     private void configurarIndicador(JLabel label) {
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setFont(
-                new Font("SansSerif", Font.BOLD, 14)
+
+        label.setHorizontalAlignment(
+                SwingConstants.CENTER
         );
+
+        label.setFont(
+                new Font("SansSerif", Font.BOLD, 13)
+        );
+
         label.setForeground(TemaSakura.ROSA_ESCURO);
     }
 
@@ -232,12 +281,13 @@ public class TelaPrincipal extends JFrame {
         );
 
         cartao.setBackground(TemaSakura.BRANCO);
+
         cartao.setBorder(
                 BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(
                                 TemaSakura.BORDA, 1, true
                         ),
-                        new EmptyBorder(10, 5, 10, 5)
+                        new EmptyBorder(8, 3, 8, 3)
                 )
         );
 
@@ -284,34 +334,136 @@ public class TelaPrincipal extends JFrame {
                 this::encerrarPartida
         );
 
-        areaTabuleiro.removeAll();
-        areaTabuleiro.add(
-                painelTabuleiro,
-                BorderLayout.CENTER
+        rolagemTabuleiro.setViewportView(
+                painelTabuleiro
         );
 
         atualizarInformacoes();
+        ajustarTamanhoJanela();
 
-        int largura = Math.max(
-                680,
-                dificuldade.getColunas() * 31 + 80
+        SwingUtilities.invokeLater(() -> {
+            rolagemTabuleiro.getViewport()
+                    .setViewPosition(new Point(0, 0));
+        });
+    }
+
+    private void ajustarTamanhoJanela() {
+
+        Rectangle areaUtil = GraphicsEnvironment
+                .getLocalGraphicsEnvironment()
+                .getMaximumWindowBounds();
+
+        Dimension tamanhoGrade =
+                painelTabuleiro.getTamanhoGrade();
+
+        Component cabecalho =
+                getContentPane().getComponent(0);
+
+        Dimension tamanhoCabecalho =
+                cabecalho.getPreferredSize();
+
+        Insets margens =
+                ((JComponent) getContentPane())
+                        .getInsets();
+
+        Insets margensTabuleiro =
+                areaTabuleiro.getInsets();
+
+        Insets decoracao = getInsets();
+
+        int larguraExtra =
+                margens.left
+                + margens.right
+                + margensTabuleiro.left
+                + margensTabuleiro.right
+                + decoracao.left
+                + decoracao.right;
+
+        int alturaExtra =
+                margens.top
+                + margens.bottom
+                + margensTabuleiro.top
+                + margensTabuleiro.bottom
+                + decoracao.top
+                + decoracao.bottom
+                + tamanhoCabecalho.height
+                + 8;
+
+        int larguraMaxima = Math.max(
+                350,
+                areaUtil.width - 40
         );
 
-        int altura = Math.max(
-                600,
-                dificuldade.getLinhas() * 31 + 310
+        int alturaMaxima = Math.max(
+                350,
+                areaUtil.height - 40
         );
 
-        setSize(largura, altura);
+        int larguraUtil = Math.max(
+                200,
+                larguraMaxima - larguraExtra
+        );
+
+        int alturaUtil = Math.max(
+                200,
+                alturaMaxima - alturaExtra
+        );
+
+        // A grade cresce para aproveitar a área útil,
+        // sem deformar as células.
+        int larguraDesejada = Math.max(
+                tamanhoGrade.width,
+                tamanhoCabecalho.width
+                        - margensTabuleiro.left
+                        - margensTabuleiro.right
+        );
+
+        int alturaDesejada = Math.max(
+                tamanhoGrade.height,
+                Math.min(larguraDesejada, alturaUtil)
+        );
+
+        int larguraViewport = Math.min(
+                larguraUtil,
+                larguraDesejada
+        );
+
+        int alturaViewport = Math.min(
+                alturaUtil,
+                alturaDesejada
+        );
+
+        rolagemTabuleiro.setPreferredSize(
+                new Dimension(
+                        larguraViewport,
+                        alturaViewport
+                )
+        );
+
+        // O pack mede a estrutura real da interface.
+        pack();
+
+        int larguraFinal = Math.min(
+                getWidth(),
+                larguraMaxima
+        );
+
+        int alturaFinal = Math.min(
+                getHeight(),
+                alturaMaxima
+        );
+
+        setSize(larguraFinal, alturaFinal);
         setLocationRelativeTo(null);
 
-        areaTabuleiro.revalidate();
-        areaTabuleiro.repaint();
+        revalidate();
+        repaint();
     }
 
     private void iniciarCronometro() {
 
         if (!partidaIniciada) {
+
             partidaIniciada = true;
 
             if (!tabuleiro.isJogoEncerrado()) {
@@ -400,7 +552,8 @@ public class TelaPrincipal extends JFrame {
             return;
         }
 
-        Solver.Jogada jogada = solver.encontrarJogada();
+        Solver.Jogada jogada =
+                solver.encontrarJogada();
 
         if (jogada == null) {
 
@@ -442,7 +595,8 @@ public class TelaPrincipal extends JFrame {
             return;
         }
 
-        Solver.Jogada jogada = solver.encontrarJogada();
+        Solver.Jogada jogada =
+                solver.encontrarJogada();
 
         if (jogada == null) {
 
@@ -507,10 +661,12 @@ public class TelaPrincipal extends JFrame {
         int reveladas = 0;
 
         for (int linha = 0;
-             linha < tabuleiro.getLinhas(); linha++) {
+             linha < tabuleiro.getLinhas();
+             linha++) {
 
             for (int coluna = 0;
-                 coluna < tabuleiro.getColunas(); coluna++) {
+                 coluna < tabuleiro.getColunas();
+                 coluna++) {
 
                 if (tabuleiro.getCelula(
                         linha, coluna
@@ -657,7 +813,8 @@ public class TelaPrincipal extends JFrame {
         StringBuilder texto = new StringBuilder();
 
         for (int i = 0;
-             i < Math.min(10, registros.size()); i++) {
+             i < Math.min(10, registros.size());
+             i++) {
 
             RegistroPartida registro = registros.get(i);
 
@@ -674,13 +831,17 @@ public class TelaPrincipal extends JFrame {
         }
 
         JTextArea area = new JTextArea(
-                texto.toString(), 12, 40
+                texto.toString(),
+                12,
+                40
         );
 
         area.setEditable(false);
+
         area.setFont(
                 new Font("Monospaced", Font.PLAIN, 13)
         );
+
         area.setBackground(TemaSakura.BRANCO);
         area.setForeground(TemaSakura.TEXTO);
 
