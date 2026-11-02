@@ -1,0 +1,14 @@
+
+# Arquivos gerados pelo Maven
+target/
+
+# Pacotes de distribuição
+Campo-minado-sakura-v1.0.0/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de IDE
+.idea/
+*.iml
