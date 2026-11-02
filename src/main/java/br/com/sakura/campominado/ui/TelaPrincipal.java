@@ -1,52 +1,207 @@
+
 package br.com.sakura.campominado.ui;
+
+import br.com.sakura.campominado.domain.ConfiguracaoJogo;
+import br.com.sakura.campominado.domain.Dificuldade;
+import br.com.sakura.campominado.domain.Tabuleiro;
 
 import javax.swing.*;
 import java.awt.*;
 
-import br.com.sakura.campominado.domain.Tabuleiro;
-import br.com.sakura.campominado.util.AudioManager;
-
 public class TelaPrincipal extends JFrame {
 
+    private Tabuleiro tabuleiro;
+    private PainelTabuleiro painelTabuleiro;
+
+    private final JPanel painelPrincipal;
+    private final JPanel areaTabuleiro;
+
+    private final JLabel labelVidas;
+    private final JLabel labelMinas;
+
+    private final JComboBox<Dificuldade> seletorDificuldade;
+
     public TelaPrincipal() {
-        AudioManager.tocarSom("bleep.wav");
-        // 1. Configurar o título da janela
+
         setTitle("Campo Minado - Sakura");
-        setSize(400, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Centraliza a janela no ecrã
+        setDefaultCloseOperation(
+                JFrame.EXIT_ON_CLOSE
+        );
 
-        // 2. Criar o painel principal com fundo creme
-        JPanel painelPrincipal = new JPanel();
-        painelPrincipal.setBackground(new Color(255, 253, 240)); // Tom creme suave
-        painelPrincipal.setLayout(new BorderLayout());
+        setMinimumSize(new Dimension(450, 450));
 
-        // 3. Criar o tabuleiro do jogo e o painel correspondente
-        Tabuleiro tabuleiro = new Tabuleiro(8, 8, 10);
-        PainelTabuleiro painelTabuleiro = new PainelTabuleiro(tabuleiro);
-        painelPrincipal.add(painelTabuleiro, BorderLayout.CENTER);
+        painelPrincipal = new JPanel(
+                new BorderLayout(8, 8)
+        );
 
-        // 4. Criar o botão para reiniciar
-        JButton botaoReiniciar = new JButton("Reiniciar");
-        botaoReiniciar.addActionListener(e -> {
-            // Ação provisória para testar se o botão responde ao clique
-            JOptionPane.showMessageDialog(this, "Botão Reiniciar clicado!");
-        });
+        painelPrincipal.setBackground(
+                new Color(255, 253, 240)
+        );
 
-        // Adicionar o botão num painel superior ou inferior
-        JPanel painelSuperior = new JPanel();
-        painelSuperior.setOpaque(false); // Para acompanhar o fundo creme
+        painelPrincipal.setBorder(
+                BorderFactory.createEmptyBorder(
+                        10, 10, 10, 10
+                )
+        );
+
+        JPanel painelSuperior = new JPanel(
+                new FlowLayout(
+                        FlowLayout.CENTER,
+                        10,
+                        5
+                )
+        );
+
+        painelSuperior.setOpaque(false);
+
+        seletorDificuldade = new JComboBox<>(
+                new Dificuldade[]{
+                        Dificuldade.FACIL,
+                        Dificuldade.MEDIO,
+                        Dificuldade.DIFICIL,
+                        Dificuldade.INFERNO
+                }
+        );
+
+        JButton botaoReiniciar =
+                new JButton("Reiniciar");
+
+        labelVidas = new JLabel();
+        labelMinas = new JLabel();
+
+        painelSuperior.add(
+                new JLabel("Dificuldade:")
+        );
+
+        painelSuperior.add(seletorDificuldade);
         painelSuperior.add(botaoReiniciar);
-        painelPrincipal.add(painelSuperior, BorderLayout.NORTH);
 
-        // Adicionar o painel principal à janela
-        add(painelPrincipal);
+        JPanel painelInformacoes = new JPanel(
+                new FlowLayout(
+                        FlowLayout.CENTER,
+                        20,
+                        5
+                )
+        );
+
+        painelInformacoes.setOpaque(false);
+        painelInformacoes.add(labelVidas);
+        painelInformacoes.add(labelMinas);
+
+        JPanel cabecalho = new JPanel(
+                new BorderLayout()
+        );
+
+        cabecalho.setOpaque(false);
+        cabecalho.add(
+                painelSuperior,
+                BorderLayout.NORTH
+        );
+
+        cabecalho.add(
+                painelInformacoes,
+                BorderLayout.SOUTH
+        );
+
+        areaTabuleiro = new JPanel(
+                new BorderLayout()
+        );
+
+        painelPrincipal.add(
+                cabecalho,
+                BorderLayout.NORTH
+        );
+
+        painelPrincipal.add(
+                areaTabuleiro,
+                BorderLayout.CENTER
+        );
+
+        setContentPane(painelPrincipal);
+
+        botaoReiniciar.addActionListener(
+                evento -> iniciarNovaPartida()
+        );
+
+        seletorDificuldade.addActionListener(
+                evento -> iniciarNovaPartida()
+        );
+
+        iniciarNovaPartida();
+        setLocationRelativeTo(null);
+    }
+
+    private void iniciarNovaPartida() {
+
+        Dificuldade dificuldade =
+                (Dificuldade) seletorDificuldade
+                        .getSelectedItem();
+
+        if (dificuldade == null) {
+            return;
+        }
+
+        ConfiguracaoJogo configuracao =
+                new ConfiguracaoJogo(
+                        dificuldade.getLinhas(),
+                        dificuldade.getColunas(),
+                        dificuldade.getMinas(),
+                        3,
+                        0,
+                        dificuldade,
+                        "Jogador"
+                );
+
+        tabuleiro = new Tabuleiro(configuracao);
+
+        painelTabuleiro = new PainelTabuleiro(
+                tabuleiro,
+                this::atualizarInformacoes
+        );
+
+        areaTabuleiro.removeAll();
+
+        areaTabuleiro.add(
+                painelTabuleiro,
+                BorderLayout.CENTER
+        );
+
+        atualizarInformacoes();
+
+        int largura = Math.max(
+                450,
+                dificuldade.getColunas() * 30 + 40
+        );
+
+        int altura = Math.max(
+                450,
+                dificuldade.getLinhas() * 30 + 130
+        );
+
+        setSize(largura, altura);
+        setLocationRelativeTo(null);
+
+        areaTabuleiro.revalidate();
+        areaTabuleiro.repaint();
+    }
+
+    private void atualizarInformacoes() {
+
+        labelVidas.setText(
+                "Vidas: " + tabuleiro.getVidas()
+        );
+
+        labelMinas.setText(
+                "Minas restantes: "
+                        + tabuleiro.getMinasRestantes()
+        );
     }
 
     public static void main(String[] args) {
-        // Executar a janela de forma segura
-        SwingUtilities.invokeLater(() -> {
-            new TelaPrincipal().setVisible(true);
-        });
+
+        SwingUtilities.invokeLater(
+                () -> new TelaPrincipal()
+                        .setVisible(true)
+        );
     }
 }
