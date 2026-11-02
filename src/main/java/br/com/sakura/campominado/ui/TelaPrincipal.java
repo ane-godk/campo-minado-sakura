@@ -10,6 +10,7 @@ import br.com.sakura.campominado.solver.Solver;
 import br.com.sakura.campominado.solver.TestadorPartida;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -52,64 +53,27 @@ public class TelaPrincipal extends JFrame {
 
         setTitle("Campo Minado - Sakura");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setMinimumSize(new Dimension(650, 520));
+        setMinimumSize(new Dimension(680, 600));
 
-        JPanel principal =
-                new JPanel(new BorderLayout(8, 8));
-
-        principal.setBackground(
-                new Color(255, 253, 240)
+        JPanel principal = new JPanel(
+                new BorderLayout(12, 12)
         );
-
+        principal.setBackground(TemaSakura.FUNDO);
         principal.setBorder(
-                BorderFactory.createEmptyBorder(
-                        10, 10, 10, 10
+                new EmptyBorder(16, 16, 16, 16)
+        );
+
+        JPanel cabecalho = criarCabecalho();
+
+        areaTabuleiro.setBackground(TemaSakura.PAINEL);
+        areaTabuleiro.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                TemaSakura.BORDA, 2, true
+                        ),
+                        new EmptyBorder(8, 8, 8, 8)
                 )
         );
-
-        // Três linhas para acomodar todos os controles.
-        JPanel controles = new JPanel(
-                new GridLayout(3, 3, 8, 8)
-        );
-        controles.setOpaque(false);
-
-        JButton reiniciar = new JButton("Reiniciar");
-        JButton ranking = new JButton("Ranking");
-        JButton jogador = new JButton("Jogador");
-        JButton passo = new JButton("Próximo passo");
-        JButton autojogar =
-                new JButton("Autojogar / Testar");
-        JButton dica = new JButton("Dica lógica");
-        JButton passoLogico = new JButton("Passo lógico");
-
-        controles.add(new JLabel("Dificuldade:"));
-        controles.add(seletorDificuldade);
-        controles.add(reiniciar);
-        controles.add(jogador);
-        controles.add(ranking);
-        controles.add(passo);
-        controles.add(autojogar);
-        controles.add(dica);
-        controles.add(passoLogico);
-
-        JPanel informacoes = new JPanel(
-                new FlowLayout(
-                        FlowLayout.CENTER, 15, 5
-                )
-        );
-        informacoes.setOpaque(false);
-
-        informacoes.add(labelVidas);
-        informacoes.add(labelMinas);
-        informacoes.add(labelTempo);
-        informacoes.add(labelPontos);
-
-        JPanel cabecalho =
-                new JPanel(new BorderLayout(0, 8));
-
-        cabecalho.setOpaque(false);
-        cabecalho.add(controles, BorderLayout.NORTH);
-        cabecalho.add(informacoes, BorderLayout.SOUTH);
 
         principal.add(cabecalho, BorderLayout.NORTH);
         principal.add(areaTabuleiro, BorderLayout.CENTER);
@@ -121,6 +85,103 @@ public class TelaPrincipal extends JFrame {
             atualizarInformacoes();
         });
 
+        iniciarNovaPartida();
+    }
+
+    private JPanel criarCabecalho() {
+
+        JPanel cabecalho = new JPanel(
+                new BorderLayout(0, 12)
+        );
+
+        cabecalho.setBackground(TemaSakura.PAINEL);
+        cabecalho.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                TemaSakura.BORDA, 2, true
+                        ),
+                        new EmptyBorder(14, 14, 14, 14)
+                )
+        );
+
+        JLabel titulo = new JLabel(
+                "✿ CAMPO MINADO SAKURA ✿",
+                SwingConstants.CENTER
+        );
+        titulo.setFont(
+                new Font("SansSerif", Font.BOLD, 23)
+        );
+        titulo.setForeground(TemaSakura.ROSA_ESCURO);
+
+        JPanel controles = new JPanel(
+                new GridLayout(3, 3, 8, 8)
+        );
+        controles.setOpaque(false);
+
+        JLabel dificuldade = new JLabel(
+                "Dificuldade:",
+                SwingConstants.CENTER
+        );
+        TemaSakura.estilizarTexto(dificuldade);
+
+        TemaSakura.estilizarSeletor(seletorDificuldade);
+
+        JButton reiniciar =
+                TemaSakura.criarBotao("Reiniciar");
+
+        JButton jogador =
+                TemaSakura.criarBotao("Jogador");
+
+        JButton ranking =
+                TemaSakura.criarBotao("Ranking");
+
+        JButton passo =
+                TemaSakura.criarBotao("Próximo passo");
+
+        JButton autojogar =
+                TemaSakura.criarBotao("Autojogar / Testar");
+
+        JButton dica =
+                TemaSakura.criarBotao("Dica lógica");
+
+        JButton passoLogico =
+                TemaSakura.criarBotao("Passo lógico");
+
+        controles.add(dificuldade);
+        controles.add(seletorDificuldade);
+        controles.add(reiniciar);
+        controles.add(jogador);
+        controles.add(ranking);
+        controles.add(passo);
+        controles.add(autojogar);
+        controles.add(dica);
+        controles.add(passoLogico);
+
+        JPanel informacoes = new JPanel(
+                new GridLayout(1, 4, 8, 0)
+        );
+        informacoes.setOpaque(false);
+
+        configurarIndicador(labelVidas);
+        configurarIndicador(labelMinas);
+        configurarIndicador(labelTempo);
+        configurarIndicador(labelPontos);
+
+        informacoes.add(criarCartao(labelVidas));
+        informacoes.add(criarCartao(labelMinas));
+        informacoes.add(criarCartao(labelTempo));
+        informacoes.add(criarCartao(labelPontos));
+
+        JPanel centro = new JPanel(
+                new BorderLayout(0, 12)
+        );
+        centro.setOpaque(false);
+        centro.add(controles, BorderLayout.CENTER);
+        centro.add(informacoes, BorderLayout.SOUTH);
+
+        cabecalho.add(titulo, BorderLayout.NORTH);
+        cabecalho.add(centro, BorderLayout.CENTER);
+
         reiniciar.addActionListener(
                 evento -> iniciarNovaPartida()
         );
@@ -129,12 +190,12 @@ public class TelaPrincipal extends JFrame {
                 evento -> iniciarNovaPartida()
         );
 
-        ranking.addActionListener(
-                evento -> mostrarRanking()
-        );
-
         jogador.addActionListener(
                 evento -> alterarJogador()
+        );
+
+        ranking.addActionListener(
+                evento -> mostrarRanking()
         );
 
         passo.addActionListener(
@@ -153,7 +214,35 @@ public class TelaPrincipal extends JFrame {
                 evento -> executarPassoLogico()
         );
 
-        iniciarNovaPartida();
+        return cabecalho;
+    }
+
+    private void configurarIndicador(JLabel label) {
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setFont(
+                new Font("SansSerif", Font.BOLD, 14)
+        );
+        label.setForeground(TemaSakura.ROSA_ESCURO);
+    }
+
+    private JPanel criarCartao(JLabel label) {
+
+        JPanel cartao = new JPanel(
+                new BorderLayout()
+        );
+
+        cartao.setBackground(TemaSakura.BRANCO);
+        cartao.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                TemaSakura.BORDA, 1, true
+                        ),
+                        new EmptyBorder(10, 5, 10, 5)
+                )
+        );
+
+        cartao.add(label, BorderLayout.CENTER);
+        return cartao;
     }
 
     private void iniciarNovaPartida() {
@@ -204,13 +293,13 @@ public class TelaPrincipal extends JFrame {
         atualizarInformacoes();
 
         int largura = Math.max(
-                650,
-                dificuldade.getColunas() * 30 + 60
+                680,
+                dificuldade.getColunas() * 31 + 80
         );
 
         int altura = Math.max(
-                540,
-                dificuldade.getLinhas() * 30 + 250
+                600,
+                dificuldade.getLinhas() * 31 + 310
         );
 
         setSize(largura, altura);
@@ -393,19 +482,19 @@ public class TelaPrincipal extends JFrame {
         }
 
         labelVidas.setText(
-                "Vidas: " + tabuleiro.getVidas()
+                "♥ Vidas: " + tabuleiro.getVidas()
         );
 
         labelMinas.setText(
-                "Minas: " + tabuleiro.getMinasRestantes()
+                "✿ Minas: " + tabuleiro.getMinasRestantes()
         );
 
         labelTempo.setText(
-                "Tempo: " + segundos + "s"
+                "◷ Tempo: " + segundos + "s"
         );
 
         labelPontos.setText(
-                "Pontos: " + calcularPontuacao()
+                "★ Pontos: " + calcularPontuacao()
         );
     }
 
@@ -485,7 +574,7 @@ public class TelaPrincipal extends JFrame {
 
                 JOptionPane.showMessageDialog(
                         this,
-                        "Vitória!\n"
+                        "✿ Vitória! ✿\n"
                                 + "Jogador: " + nomeJogador
                                 + "\nPontuação: " + pontos
                                 + "\nTempo: " + segundos + "s"
@@ -589,14 +678,16 @@ public class TelaPrincipal extends JFrame {
         );
 
         area.setEditable(false);
-        area.setFont(new Font(
-                "Monospaced", Font.PLAIN, 13
-        ));
+        area.setFont(
+                new Font("Monospaced", Font.PLAIN, 13)
+        );
+        area.setBackground(TemaSakura.BRANCO);
+        area.setForeground(TemaSakura.TEXTO);
 
         JOptionPane.showMessageDialog(
                 this,
                 new JScrollPane(area),
-                "Top 10 - Ranking Sakura",
+                "✿ Top 10 - Ranking Sakura ✿",
                 JOptionPane.INFORMATION_MESSAGE
         );
     }
