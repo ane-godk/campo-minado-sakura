@@ -6,6 +6,7 @@ import br.com.sakura.campominado.domain.Dificuldade;
 import br.com.sakura.campominado.domain.RegistroPartida;
 import br.com.sakura.campominado.domain.Tabuleiro;
 import br.com.sakura.campominado.service.RankingService;
+import br.com.sakura.campominado.solver.Solver;
 import br.com.sakura.campominado.solver.TestadorPartida;
 
 import javax.swing.*;
@@ -18,6 +19,7 @@ public class TelaPrincipal extends JFrame {
     private Tabuleiro tabuleiro;
     private PainelTabuleiro painelTabuleiro;
     private TestadorPartida testador;
+    private Solver solver;
 
     private final JPanel areaTabuleiro =
             new JPanel(new BorderLayout());
@@ -50,7 +52,7 @@ public class TelaPrincipal extends JFrame {
 
         setTitle("Campo Minado - Sakura");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setMinimumSize(new Dimension(600, 480));
+        setMinimumSize(new Dimension(650, 520));
 
         JPanel principal =
                 new JPanel(new BorderLayout(8, 8));
@@ -65,11 +67,10 @@ public class TelaPrincipal extends JFrame {
                 )
         );
 
-        // Duas linhas para exibir todos os controles.
+        // Três linhas para acomodar todos os controles.
         JPanel controles = new JPanel(
-                new GridLayout(2, 4, 8, 8)
+                new GridLayout(3, 3, 8, 8)
         );
-
         controles.setOpaque(false);
 
         JButton reiniciar = new JButton("Reiniciar");
@@ -78,6 +79,8 @@ public class TelaPrincipal extends JFrame {
         JButton passo = new JButton("Próximo passo");
         JButton autojogar =
                 new JButton("Autojogar / Testar");
+        JButton dica = new JButton("Dica lógica");
+        JButton passoLogico = new JButton("Passo lógico");
 
         controles.add(new JLabel("Dificuldade:"));
         controles.add(seletorDificuldade);
@@ -86,12 +89,14 @@ public class TelaPrincipal extends JFrame {
         controles.add(ranking);
         controles.add(passo);
         controles.add(autojogar);
+        controles.add(dica);
+        controles.add(passoLogico);
 
-        JPanel informacoes =
-                new JPanel(new FlowLayout(
+        JPanel informacoes = new JPanel(
+                new FlowLayout(
                         FlowLayout.CENTER, 15, 5
-                ));
-
+                )
+        );
         informacoes.setOpaque(false);
 
         informacoes.add(labelVidas);
@@ -140,6 +145,14 @@ public class TelaPrincipal extends JFrame {
                 evento -> executarAutojogo()
         );
 
+        dica.addActionListener(
+                evento -> mostrarDicaLogica()
+        );
+
+        passoLogico.addActionListener(
+                evento -> executarPassoLogico()
+        );
+
         iniciarNovaPartida();
     }
 
@@ -173,6 +186,7 @@ public class TelaPrincipal extends JFrame {
 
         tabuleiro = new Tabuleiro(configuracao);
         testador = new TestadorPartida(tabuleiro);
+        solver = new Solver(tabuleiro);
 
         painelTabuleiro = new PainelTabuleiro(
                 tabuleiro,
@@ -195,8 +209,8 @@ public class TelaPrincipal extends JFrame {
         );
 
         int altura = Math.max(
-                520,
-                dificuldade.getLinhas() * 30 + 210
+                540,
+                dificuldade.getLinhas() * 30 + 250
         );
 
         setSize(largura, altura);
@@ -219,14 +233,8 @@ public class TelaPrincipal extends JFrame {
 
     private void executarPasso() {
 
-        if (tabuleiro.isJogoEncerrado()) {
-            return;
-        }
-
-        // Evita executar passos manuais enquanto
-        // o modo automático está em andamento.
-        if (timerAutojogo != null
-                && timerAutojogo.isRunning()) {
+        if (tabuleiro.isJogoEncerrado()
+                || autojogoEmAndamento()) {
             return;
         }
 
@@ -243,10 +251,7 @@ public class TelaPrincipal extends JFrame {
             return;
         }
 
-        // Clicar novamente interrompe o autojogo.
-        if (timerAutojogo != null
-                && timerAutojogo.isRunning()) {
-
+        if (autojogoEmAndamento()) {
             pararAutojogo();
             return;
         }
@@ -286,14 +291,10 @@ public class TelaPrincipal extends JFrame {
         timerAutojogo.start();
     }
 
-    private void atualizarAposJogadaAutomatica() {
+    private boolean autojogoEmAndamento() {
 
-        painelTabuleiro.atualizarTabuleiro();
-        atualizarInformacoes();
-
-        if (tabuleiro.isJogoEncerrado()) {
-            encerrarPartida();
-        }
+        return timerAutojogo != null
+                && timerAutojogo.isRunning();
     }
 
     private void pararAutojogo() {
@@ -301,6 +302,87 @@ public class TelaPrincipal extends JFrame {
         if (timerAutojogo != null) {
             timerAutojogo.stop();
             timerAutojogo = null;
+        }
+    }
+
+    private void mostrarDicaLogica() {
+
+        if (autojogoEmAndamento()) {
+            return;
+        }
+
+        Solver.Jogada jogada = solver.encontrarJogada();
+
+        if (jogada == null) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Nenhuma jogada lógica disponível.\n"
+                            + "Revele mais células "
+                            + "ou continue manualmente.",
+                    "Dica lógica",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            return;
+        }
+
+        String acao =
+                jogada.tipo() == Solver.TipoJogada.REVELAR
+                        ? "Revelar"
+                        : "Marcar como mina";
+
+        JOptionPane.showMessageDialog(
+                this,
+                acao
+                        + " a célula da linha "
+                        + (jogada.linha() + 1)
+                        + ", coluna "
+                        + (jogada.coluna() + 1)
+                        + ".\n\n"
+                        + jogada.explicacao(),
+                "Dica lógica",
+                JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+
+    private void executarPassoLogico() {
+
+        if (tabuleiro.isJogoEncerrado()
+                || autojogoEmAndamento()) {
+            return;
+        }
+
+        Solver.Jogada jogada = solver.encontrarJogada();
+
+        if (jogada == null) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Nenhuma jogada lógica disponível.\n"
+                            + "O solver não fará "
+                            + "uma jogada aleatória.",
+                    "Solver lógico",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            return;
+        }
+
+        iniciarCronometro();
+
+        if (solver.executarJogada(jogada)) {
+            atualizarAposJogadaAutomatica();
+        }
+    }
+
+    private void atualizarAposJogadaAutomatica() {
+
+        painelTabuleiro.atualizarTabuleiro();
+        atualizarInformacoes();
+
+        if (tabuleiro.isJogoEncerrado()) {
+            encerrarPartida();
         }
     }
 
