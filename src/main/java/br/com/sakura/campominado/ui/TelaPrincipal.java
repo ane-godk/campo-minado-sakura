@@ -590,11 +590,10 @@ public class TelaPrincipal extends JFrame {
         }
 
         if (dicasRestantes <= 0) {
-            JOptionPane.showMessageDialog(
+            DialogoSakura.avisar(
                     this,
-                    "Você já utilizou as três dicas desta partida.",
                     "Dicas esgotadas",
-                    JOptionPane.INFORMATION_MESSAGE
+                    "Você já utilizou as três dicas desta partida."
             );
             return;
         }
@@ -603,13 +602,12 @@ public class TelaPrincipal extends JFrame {
                 solver.encontrarJogada();
 
         if (jogada == null) {
-            JOptionPane.showMessageDialog(
+            DialogoSakura.informar(
                     this,
+                    "Dica Sakura",
                     "Ainda não existe uma dedução lógica segura.\n"
                             + "Revele mais células e tente novamente.\n\n"
-                            + "Nenhuma dica foi consumida.",
-                    "Dica Sakura",
-                    JOptionPane.INFORMATION_MESSAGE
+                            + "Nenhuma dica foi consumida."
             );
             return;
         }
@@ -700,9 +698,11 @@ public class TelaPrincipal extends JFrame {
 
                     if (autosolveEstavaAtivo) {
                         pararAutojogo();
+
                         labelOrientacao.setText(
                                 "Autosolve interrompido pelo jogador."
                         );
+
                         retomarPartida();
                     } else {
                         iniciarAutojogo();
@@ -716,36 +716,30 @@ public class TelaPrincipal extends JFrame {
                         mostrarRanking();
 
                 case REINICIAR -> {
-                    int confirmar =
-                            JOptionPane.showConfirmDialog(
+                    boolean confirmou =
+                            DialogoSakura.confirmar(
                                     this,
-                                    "Deseja reiniciar a partida atual?\n"
-                                            + "O progresso será perdido.",
                                     "Reiniciar partida",
-                                    JOptionPane.YES_NO_OPTION,
-                                    JOptionPane.WARNING_MESSAGE
+                                    "Deseja reiniciar a partida atual?\n"
+                                            + "O progresso será perdido."
                             );
 
-                    if (confirmar
-                            == JOptionPane.YES_OPTION) {
+                    if (confirmou) {
                         menuAberto = false;
                         iniciarNovaPartida();
                     }
                 }
 
                 case VOLTAR_MENU -> {
-                    int confirmar =
-                            JOptionPane.showConfirmDialog(
+                    boolean confirmou =
+                            DialogoSakura.confirmar(
                                     this,
-                                    "Deseja voltar ao menu inicial?\n"
-                                            + "A partida atual será perdida.",
                                     "Voltar ao menu",
-                                    JOptionPane.YES_NO_OPTION,
-                                    JOptionPane.WARNING_MESSAGE
+                                    "Deseja voltar ao menu inicial?\n"
+                                            + "A partida atual será perdida."
                             );
 
-                    if (confirmar
-                            == JOptionPane.YES_OPTION) {
+                    if (confirmou) {
                         menuAberto = false;
                         voltarAoMenuInicial();
                     }
@@ -806,11 +800,10 @@ public class TelaPrincipal extends JFrame {
 
                             atualizarInformacoes();
 
-                            JOptionPane.showMessageDialog(
+                            DialogoSakura.avisar(
                                     this,
-                                    "O Autosolve não encontrou mais jogadas.",
                                     "Autosolve interrompido",
-                                    JOptionPane.WARNING_MESSAGE
+                                    "O Autosolve não encontrou mais jogadas."
                             );
 
                             return;
@@ -852,8 +845,13 @@ public class TelaPrincipal extends JFrame {
         );
 
         labelAutosolve.setVisible(ativo);
-        labelAutosolve.getParent().revalidate();
-        labelAutosolve.getParent().repaint();
+
+        Container pai = labelAutosolve.getParent();
+
+        if (pai != null) {
+            pai.revalidate();
+            pai.repaint();
+        }
     }
 
     private void atualizarAposJogadaAutomatica() {
@@ -1008,12 +1006,11 @@ public class TelaPrincipal extends JFrame {
                 salvouRanking = true;
 
             } catch (IllegalStateException e) {
-                JOptionPane.showMessageDialog(
+                DialogoSakura.erro(
                         this,
+                        "Erro ao salvar ranking",
                         "Não foi possível salvar o ranking:\n"
-                                + e.getMessage(),
-                        "Ranking",
-                        JOptionPane.WARNING_MESSAGE
+                                + e.getMessage()
                 );
             }
         }
@@ -1106,11 +1103,10 @@ public class TelaPrincipal extends JFrame {
             registros = rankingService.listar();
 
         } catch (IllegalStateException e) {
-            JOptionPane.showMessageDialog(
+            DialogoSakura.erro(
                     this,
-                    e.getMessage(),
                     "Erro no ranking",
-                    JOptionPane.ERROR_MESSAGE
+                    e.getMessage()
             );
             return;
         }
