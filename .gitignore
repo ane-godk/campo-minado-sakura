@@ -12,3 +12,7 @@ Thumbs.db
 # Arquivos de IDE
 .idea/
 *.iml
+
+# Arquivos gerados pelo Maven
+target/
+**/target/
